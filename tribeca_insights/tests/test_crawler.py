@@ -50,7 +50,9 @@ def test_fetch_and_process(monkeypatch, tmp_path):
     monkeypatch.setattr(crawler.session, "get", lambda url, timeout: FakeResp(html))
     monkeypatch.setattr(crawler, "export_page_to_markdown", lambda *a, **k: None)
     monkeypatch.setattr(crawler, "extract_visible_text", lambda t: "Body text")
-    monkeypatch.setattr(crawler, "clean_and_tokenize", lambda t, l: ["body", "text"])
+    monkeypatch.setattr(
+        crawler, "clean_and_tokenize", lambda t, _lang: ["body", "text"]
+    )
     monkeypatch.setattr(time, "sleep", lambda s: None)
 
     vis, ext, index, md, data = crawler.fetch_and_process(

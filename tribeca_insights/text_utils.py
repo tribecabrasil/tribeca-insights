@@ -11,7 +11,7 @@ import logging
 import os
 import re
 from functools import lru_cache
-from typing import Dict, List, Optional, Set
+from typing import List, Optional, Set
 
 import nltk
 
