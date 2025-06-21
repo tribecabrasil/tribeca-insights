@@ -11,7 +11,11 @@ import pandas as pd
 
 from tribeca_insights.config import HTTP_TIMEOUT, SUPPORTED_LANGUAGES
 from tribeca_insights.crawler import crawl_site
-from tribeca_insights.storage import load_visited_urls, save_visited_urls
+from tribeca_insights.storage import (
+    load_visited_urls,
+    save_visited_urls,
+    setup_project_folder,
+)
 from tribeca_insights.text_utils import setup_environment
 
 logger = logging.getLogger(__name__)
@@ -98,6 +102,7 @@ def main() -> None:
         slug = cmd_args.slug
         base_url = cmd_args.base_url
         language = cmd_args.language
+        project_folder = setup_project_folder(slug)
         visited_df = load_visited_urls(Path.cwd(), slug)
         if visited_df.empty:
             logger.info(f"Seeding initial URL '{base_url}' for crawl queue")
@@ -108,7 +113,7 @@ def main() -> None:
         crawl_site(
             slug,
             base_url,
-            Path(slug),
+            project_folder,
             visited_df,
             cmd_args.max_pages,
             cmd_args.workers,
