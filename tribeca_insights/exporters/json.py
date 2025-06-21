@@ -145,3 +145,69 @@ def export_json(input_dir: str, out_file: str) -> None:
         logger.error(f"Failed to write combined JSON to {out_file}: {e}")
     else:
         logger.info(f"✅ Exported combined JSON to {out_file}")
+
+
+def update_project_json(
+    folder: Path,
+    slug: str,
+    base_url: str,
+    language: str,
+    pages_data: List[Dict],
+    max_pages: int,
+    workers: int,
+    crawl_delay: float,
+) -> None:
+    """Create or update the consolidated project metadata JSON."""
+
+    from datetime import datetime
+
+    from tribeca_insights.config import CRAWLED_BY, VERSION
+
+    folder.mkdir(parents=True, exist_ok=True)
+    project_path = folder / f"project_{slug}.json"
+    now_iso = datetime.now().isoformat()
+    if project_path.exists():
+        try:
+            with open(project_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception as e:  # pragma: no cover - log error only
+            logger.error(f"Failed to read existing project JSON: {e}")
+            data = {}
+    else:
+        data = {}
+
+    created_at = data.get("created_at", now_iso)
+
+    pages_map = {p.get("slug"): p for p in data.get("pages", []) if p.get("slug")}
+    for p in pages_data:
+        slug_key = p.get("slug")
+        if slug_key:
+            pages_map[slug_key] = p
+
+    data.update(
+        {
+            "version": VERSION,
+            "crawled_by": CRAWLED_BY,
+            "project_slug": slug,
+            "domain": slug,
+            "base_url": base_url,
+            "site_language": language,
+            "language": language,
+            "created_at": created_at,
+            "last_updated_at": now_iso,
+            "max_pages": max_pages,
+            "max_workers": workers,
+            "crawl_delay": crawl_delay,
+            "pages": list(pages_map.values()),
+            "pages_count": len(pages_map),
+        }
+    )
+
+    try:
+        with open(project_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, **JSON_DUMP_KWARGS)
+    except Exception as e:  # pragma: no cover - log error only
+        logger.error(f"Failed to write project JSON {project_path}: {e}")
+    else:
+        logger.info(f"Updated project JSON at {project_path}")
+    return None

@@ -9,8 +9,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from tribeca_insights.config import HTTP_TIMEOUT, SUPPORTED_LANGUAGES
+from tribeca_insights.config import HTTP_TIMEOUT, SUPPORTED_LANGUAGES, crawl_delay
 from tribeca_insights.crawler import crawl_site
+from tribeca_insights.exporters.json import update_project_json
 from tribeca_insights.storage import (
     add_urls_from_sitemap,
     load_visited_urls,
@@ -116,7 +117,7 @@ def main() -> None:
         visited_df = reconcile_md_files(visited_df, project_folder)
         visited_df = add_urls_from_sitemap(base_url, visited_df)
         save_visited_urls(visited_df, Path.cwd() / f"visited_urls_{slug}.csv")
-        crawl_site(
+        _full_text, pages_data = crawl_site(
             slug,
             base_url,
             project_folder,
@@ -125,6 +126,16 @@ def main() -> None:
             cmd_args.workers,
             site_language=language,
             timeout=cmd_args.timeout,
+        )
+        update_project_json(
+            project_folder,
+            slug,
+            base_url,
+            language,
+            pages_data,
+            cmd_args.max_pages,
+            cmd_args.workers,
+            crawl_delay,
         )
     elif args.command == "export":
         from tribeca_insights.exporters import export_data  # implement export_data()
