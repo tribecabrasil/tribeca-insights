@@ -8,9 +8,9 @@ keyword frequency JSON, and visited URLs JSON.
 import json
 import logging
 from pathlib import Path
+from typing import Dict, List, Set
 
 import pandas as pd
-from typing import List, Set, Dict
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +19,7 @@ JSON_INDEX = "index.json"
 JSON_EXTERNAL = "external_urls.json"
 JSON_FREQ_TEMPLATE = "keyword_frequency_{}.json"
 JSON_DUMP_KWARGS = {"ensure_ascii": False, "indent": 2}
+
 
 def export_pages_json(folder: Path, pages_data: List[Dict]) -> None:
     """
@@ -48,6 +49,7 @@ def export_pages_json(folder: Path, pages_data: List[Dict]) -> None:
     logger.info(f"Exported {len(pages_data)} pages to JSON in {pages_json_dir}")
     return None
 
+
 def export_index_json(folder: Path, pages_data: List[Dict]) -> None:
     """
     Generate index.json with a list of {slug, title, md_filename} for each page.
@@ -64,7 +66,11 @@ def export_index_json(folder: Path, pages_data: List[Dict]) -> None:
     """
     folder.mkdir(parents=True, exist_ok=True)
     index = [
-        {"slug": p["slug"], "title": p.get("title", ""), "md_filename": p.get("md_filename", "")}
+        {
+            "slug": p["slug"],
+            "title": p.get("title", ""),
+            "md_filename": p.get("md_filename", ""),
+        }
         for p in pages_data
     ]
     index_path = folder / JSON_INDEX
@@ -76,6 +82,7 @@ def export_index_json(folder: Path, pages_data: List[Dict]) -> None:
     else:
         logger.info(f"Exported index for {len(index)} pages to {index_path}")
     return None
+
 
 def export_external_urls_json(folder: Path, external_links: Set[str]) -> None:
     """
@@ -112,6 +119,7 @@ def export_external_urls_json(folder: Path, external_links: Set[str]) -> None:
         logger.info(f"Exported {len(urls_list)} external URLs to {path}")
     return None
 
+
 def export_keyword_frequency_json(folder: Path, domain: str) -> None:
     """
     Read keyword_frequency_<domain>.csv and generate keyword_frequency_<domain>.json with {word: freq}.
@@ -133,14 +141,19 @@ def export_keyword_frequency_json(folder: Path, domain: str) -> None:
         return None
     try:
         df = pd.read_csv(csv_path)
-        freq: Dict[str, int] = dict(zip(df['word'], df['freq']))
+        freq: Dict[str, int] = dict(zip(df["word"], df["freq"]))
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(freq, f, **JSON_DUMP_KWARGS)
     except Exception as e:
-        logger.error(f"Failed to export keyword frequency JSON for domain '{domain}': {e}")
+        logger.error(
+            f"Failed to export keyword frequency JSON for domain '{domain}': {e}"
+        )
     else:
-        logger.info(f"Exported keyword frequency JSON with {len(freq)} items to: {json_path}")
+        logger.info(
+            f"Exported keyword frequency JSON with {len(freq)} items to: {json_path}"
+        )
     return None
+
 
 def export_visited_urls_json(visited_csv: Path) -> None:
     """
@@ -158,7 +171,7 @@ def export_visited_urls_json(visited_csv: Path) -> None:
     if not visited_csv.exists():
         logger.warning(f"visited_urls CSV not found: {visited_csv}")
         return None
-    json_path = visited_csv.with_suffix('.json')
+    json_path = visited_csv.with_suffix(".json")
     json_path.parent.mkdir(parents=True, exist_ok=True)
     try:
         df = pd.read_csv(visited_csv)
@@ -166,5 +179,7 @@ def export_visited_urls_json(visited_csv: Path) -> None:
     except Exception as e:
         logger.error(f"Failed to export visited URLs JSON for {visited_csv}: {e}")
     else:
-        logger.info(f"Exported visited URLs JSON with {len(df)} records to: {json_path}")
+        logger.info(
+            f"Exported visited URLs JSON with {len(df)} records to: {json_path}"
+        )
     return None

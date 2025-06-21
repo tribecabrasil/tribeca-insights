@@ -5,34 +5,35 @@ Orchestrates argument parsing, environment setup, crawling, and export.
 """
 
 import argparse
+import concurrent.futures
+import hashlib
 import json
 import logging
+import os
+import re
+import ssl
 import time
+import urllib.robotparser as robotparser
+import xml.etree.ElementTree as ET
+from collections import Counter
 from datetime import datetime
 from pathlib import Path
+from typing import List, Set, Tuple
+from urllib.error import URLError
+from urllib.parse import urljoin, urlparse
 
+import nltk
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from slugify import slugify
-from urllib.parse import urljoin, urlparse
-from urllib.error import URLError
-import xml.etree.ElementTree as ET
-import nltk
 
-import concurrent.futures
-import hashlib
-from collections import Counter
-from typing import List, Set, Tuple
-import ssl
-import urllib.robotparser as robotparser
-import re
-import os
 crawl_delay = 0.0
 
 logger = logging.getLogger(__name__)
 
 crawl_delay = 0.0
+
 
 def get_crawl_delay(base_url: str) -> float:
     """Fetch crawl-delay from robots.txt or return 0."""
@@ -47,7 +48,9 @@ def get_crawl_delay(base_url: str) -> float:
     except Exception:
         return 0.0
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+
 
 # Função utilitária para remover espaços ou retornar string vazia, com logging para None
 def safe_strip(value):
@@ -55,11 +58,14 @@ def safe_strip(value):
         logger.debug("safe_strip recebeu None")
         return ""
     return value.strip() if isinstance(value, str) else ""
+
+
 VERSION = "1.0"
 USER_AGENT = f"SeoCrawler/{VERSION}"
 CRAWLED_BY = USER_AGENT
 session = requests.Session()
-session.headers.update({'User-Agent': USER_AGENT})
+session.headers.update({"User-Agent": USER_AGENT})
+
 
 # Configura o ambiente para permitir downloads do NLTK e evita erros SSL em algumas plataformas
 def setup_environment() -> None:
@@ -71,6 +77,7 @@ def setup_environment() -> None:
         pass
     nltk.download("stopwords", quiet=True)
 
+
 # Limpa e tokeniza o texto, removendo caracteres não alfabéticos, espaços extras e stopwords.
 # Esta função unifica o tratamento de texto para análise de frequência, evitando redundância.
 def clean_and_tokenize(text: str, language: str = "english") -> List[str]:
@@ -81,6 +88,7 @@ def clean_and_tokenize(text: str, language: str = "english") -> List[str]:
     stop_words = set(nltk.corpus.stopwords.words(language))
     return [word for word in tokens if word not in stop_words and len(word) > 2]
 
+
 # Extrai o texto visível de um HTML, removendo tags que não contribuem para o conteúdo principal
 def extract_visible_text(html: str) -> str:
     """Extract visible text from HTML excluding non-content tags."""
@@ -89,6 +97,7 @@ def extract_visible_text(html: str) -> str:
         tag.decompose()
     text = soup.get_text(separator=" ")
     return text.strip() if text else ""
+
 
 # Obtém todos os links internos pertencentes ao domínio a partir do conteúdo HTML
 def get_internal_links(soup: BeautifulSoup, base_url: str, domain: str) -> Set[str]:
@@ -101,6 +110,7 @@ def get_internal_links(soup: BeautifulSoup, base_url: str, domain: str) -> Set[s
             if urlparse(full_url).netloc.replace("www.", "") == domain:
                 links.add(full_url.split("#")[0])
     return links
+
 
 # Obtém todos os links externos que não pertencem ao domínio a partir do conteúdo HTML
 def get_external_links(soup: BeautifulSoup, domain: str) -> Set[str]:
@@ -124,11 +134,13 @@ def load_visited_urls(csv_path: Path) -> pd.DataFrame:
         df["MD File"] = ""
     return df
 
+
 # Salva o DataFrame de URLs visitadas em CSV, removendo duplicatas para manter integridade
 def save_visited_urls(df: pd.DataFrame, csv_path: Path) -> None:
     """Save visited URLs DataFrame to CSV removing duplicates."""
     df = df.drop_duplicates(subset=["URL"])
     df.to_csv(csv_path, index=False)
+
 
 # Solicita ao usuário escolher um domínio já analisado ou digitar uma nova URL para iniciar o rastreamento
 def ask_for_domain(existing_csvs: List[str]) -> Tuple[str, str]:
@@ -154,7 +166,9 @@ def ask_for_domain(existing_csvs: List[str]) -> Tuple[str, str]:
         domain = domain_map[choice]
         base_url = f"https://{domain}"
     else:
-        base_url = input("\n🌐 Digite a nova URL (ex: https://www.next-health.com): ").strip()
+        base_url = input(
+            "\n🌐 Digite a nova URL (ex: https://www.next-health.com): "
+        ).strip()
         domain = urlparse(base_url).netloc.replace("www.", "")
     # Prompt for language
     print("\n🌐 Qual o idioma principal do site? (en / pt-br)")
@@ -162,6 +176,7 @@ def ask_for_domain(existing_csvs: List[str]) -> Tuple[str, str]:
     if not site_language:
         site_language = "en"
     return domain, base_url, site_language
+
 
 # Cria a estrutura de pastas para armazenar os arquivos gerados durante a análise
 def setup_project_folder(domain: str) -> Path:
@@ -171,6 +186,7 @@ def setup_project_folder(domain: str) -> Path:
     (folder / "pages_md").mkdir(exist_ok=True)
     return folder
 
+
 # Consulta o sitemap.xml do domínio para adicionar URLs novas ao DataFrame de URLs visitadas
 def add_urls_from_sitemap(base_url: str, visited_df: pd.DataFrame) -> pd.DataFrame:
     """Add URLs from sitemap.xml to visited DataFrame."""
@@ -179,7 +195,7 @@ def add_urls_from_sitemap(base_url: str, visited_df: pd.DataFrame) -> pd.DataFra
         resp = session.get(sitemap_url, timeout=10)
         if resp.status_code == 200:
             root = ET.fromstring(resp.content)
-            ns = {'ns': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
+            ns = {"ns": "http://www.sitemaps.org/schemas/sitemap/0.9"}
             new_rows = []
             for url in root.findall(".//ns:loc", ns):
                 if not url.text:
@@ -194,8 +210,11 @@ def add_urls_from_sitemap(base_url: str, visited_df: pd.DataFrame) -> pd.DataFra
         logger.warning(f"Erro ao acessar sitemap.xml: {e}")
     return visited_df
 
+
 # Exporta o conteúdo de uma página para um arquivo Markdown, incluindo título, descrição, headings, texto, frequência e imagens
-def export_page_to_markdown(folder: Path, url: str, html: str, domain: str, external_links: Set[str]) -> None:
+def export_page_to_markdown(
+    folder: Path, url: str, html: str, domain: str, external_links: Set[str]
+) -> None:
     """Export page content to markdown file."""
     soup = BeautifulSoup(html, "html.parser")
     # Safe extraction of title
@@ -215,8 +234,10 @@ def export_page_to_markdown(folder: Path, url: str, html: str, domain: str, exte
         logger.warning(f"[META DESCRIPTION ERROR] {url}: {e}")
         description = "(erro ao extrair descrição)"
 
-    headings = [f"{'#' * int(tag.name[1])} {tag.get_text(strip=True)}"
-                for tag in soup.find_all(re.compile("^h[1-6]$"))]
+    headings = [
+        f"{'#' * int(tag.name[1])} {tag.get_text(strip=True)}"
+        for tag in soup.find_all(re.compile("^h[1-6]$"))
+    ]
 
     visible_text = extract_visible_text(html)
     tokens = clean_and_tokenize(visible_text)
@@ -248,11 +269,16 @@ def export_page_to_markdown(folder: Path, url: str, html: str, domain: str, exte
         for word, freq in local_freq.most_common(20):
             f.write(f"- **{word}**: {freq}\n")
         f.write("\n## Imagens com ALT texts\n")
-        f.write("\n".join(image_lines) if image_lines else "_Nenhuma imagem encontrada._\n")
+        f.write(
+            "\n".join(image_lines) if image_lines else "_Nenhuma imagem encontrada._\n"
+        )
         f.write("\n---\n")
         f.write(f"_Total de palavras analisadas: {len(tokens)}_\n")
 
-def fetch_and_process(url: str, domain: str, folder: Path, language: str = "english") -> Tuple[str, Set[str], Tuple[str, str], str, dict]:
+
+def fetch_and_process(
+    url: str, domain: str, folder: Path, language: str = "english"
+) -> Tuple[str, Set[str], Tuple[str, str], str, dict]:
     """
     Fetch a URL, export markdown, and return:
         - visible text,
@@ -295,7 +321,9 @@ def fetch_and_process(url: str, domain: str, folder: Path, language: str = "engl
             description = "(erro ao extrair descrição)"
 
         # Headings
-        headings = [tag.get_text(strip=True) for tag in soup.find_all(re.compile("^h[1-6]$"))]
+        headings = [
+            tag.get_text(strip=True) for tag in soup.find_all(re.compile("^h[1-6]$"))
+        ]
 
         # Word frequency
         tokens = clean_and_tokenize(visible_text, language)
@@ -336,8 +364,17 @@ def fetch_and_process(url: str, domain: str, folder: Path, language: str = "engl
         logger.warning(f"Erro em {url}: {e}")
         return "", set(), None, None, None
 
+
 # Realiza o rastreamento das páginas a partir das URLs pendentes, atualiza status e coleta texto para análise
-def crawl_site(domain: str, base_url: str, folder: Path, visited_df: pd.DataFrame, max_pages: int, max_workers: int, language: str = "english") -> Tuple[str, list]:
+def crawl_site(
+    domain: str,
+    base_url: str,
+    folder: Path,
+    visited_df: pd.DataFrame,
+    max_pages: int,
+    max_workers: int,
+    language: str = "english",
+) -> Tuple[str, list]:
     """
     Crawl site URLs concurrently, update visited_df, and return:
         - combined text corpus (for keyword frequency)
@@ -349,17 +386,24 @@ def crawl_site(domain: str, base_url: str, folder: Path, visited_df: pd.DataFram
     pages_data: List[dict] = []
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        future_to_url = {executor.submit(fetch_and_process, url, domain, folder, language): url for url in urls_to_visit}
+        future_to_url = {
+            executor.submit(fetch_and_process, url, domain, folder, language): url
+            for url in urls_to_visit
+        }
         for future in concurrent.futures.as_completed(future_to_url):
             url = future_to_url[future]
             try:
-                visible_text, ext_links, index_entry, md_filename, page_data = future.result()
+                visible_text, ext_links, index_entry, md_filename, page_data = (
+                    future.result()
+                )
                 if visible_text:
                     text_corpus.append(visible_text)
                 external_links.update(ext_links)
 
                 visited_df.loc[visited_df["URL"] == url, "Status"] = 1
-                visited_df.loc[visited_df["URL"] == url, "Data"] = datetime.now().strftime("%Y-%m-%d")
+                visited_df.loc[visited_df["URL"] == url, "Data"] = (
+                    datetime.now().strftime("%Y-%m-%d")
+                )
                 if md_filename:
                     visited_df.loc[visited_df["URL"] == url, "MD File"] = md_filename
                 if page_data:
@@ -371,8 +415,11 @@ def crawl_site(domain: str, base_url: str, folder: Path, visited_df: pd.DataFram
     export_external_urls(folder, external_links)
     return " ".join(text_corpus), pages_data
 
+
 # Atualiza e exporta a frequência de palavras para um arquivo CSV, combinando dados anteriores e novos
-def update_keyword_frequency(folder: Path, domain: str, full_text: str, language: str = "english") -> None:
+def update_keyword_frequency(
+    folder: Path, domain: str, full_text: str, language: str = "english"
+) -> None:
     """Update and export keyword frequency CSV."""
     tokens = clean_and_tokenize(full_text, language)
     freq = Counter(tokens)
@@ -384,9 +431,12 @@ def update_keyword_frequency(folder: Path, domain: str, full_text: str, language
         combined.update(freq)
         freq = combined
 
-    df = pd.DataFrame(freq.items(), columns=["Word", "Frequency"]).sort_values(by="Frequency", ascending=False)
+    df = pd.DataFrame(freq.items(), columns=["Word", "Frequency"]).sort_values(
+        by="Frequency", ascending=False
+    )
     df.to_csv(csv_path, index=False)
     logger.info(f"Frequência exportada: {csv_path}")
+
 
 # Exporta as URLs externas encontradas durante o rastreamento para um arquivo Markdown
 def export_external_urls(folder: Path, external_links: Set[str]) -> None:
@@ -395,6 +445,7 @@ def export_external_urls(folder: Path, external_links: Set[str]) -> None:
         f.write("# URLs Externas Coletadas\n\n")
         for link in sorted(external_links):
             f.write(f"- {link}\n")
+
 
 # Reconcilia MD File faltantes para garantir reprocessamento se necessário
 def reconcile_md_files(visited_df: pd.DataFrame, folder: Path) -> pd.DataFrame:
@@ -413,6 +464,7 @@ def reconcile_md_files(visited_df: pd.DataFrame, folder: Path) -> pd.DataFrame:
                 visited_df.at[idx, "Status"] = 2
     return visited_df
 
+
 # Gera um índice em Markdown com links para todas as páginas analisadas, facilitando navegação
 def gerar_indice_markdown(folder: Path) -> None:
     """Generate markdown index file with links to analyzed pages."""
@@ -425,6 +477,7 @@ def gerar_indice_markdown(folder: Path) -> None:
             rel_path = page.relative_to(folder)
             f.write(f"- [{title}]({rel_path})\n")
 
+
 # Função principal que orquestra a execução completa do fluxo de crawling e análise,
 # incluindo setup, carregamento de histórico, rastreamento, análise de palavras e geração de índices.
 def main() -> None:
@@ -435,10 +488,10 @@ def main() -> None:
     setup_environment()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--max-pages', type=int, default=10)
-    parser.add_argument('--language', type=str, default=None)
-    parser.add_argument('--max-workers', type=int, default=5)
-    parser.add_argument('--delay', type=float, default=None)
+    parser.add_argument("--max-pages", type=int, default=10)
+    parser.add_argument("--language", type=str, default=None)
+    parser.add_argument("--max-workers", type=int, default=5)
+    parser.add_argument("--delay", type=float, default=None)
     args = parser.parse_args()
 
     existing_csvs = list(Path.cwd().glob("visited_urls_*.csv"))
@@ -446,7 +499,11 @@ def main() -> None:
     folder = setup_project_folder(domain)
 
     # Prefer CLI language if provided
-    language = args.language if args.language else ("portuguese" if site_language.startswith("pt") else "english")
+    language = (
+        args.language
+        if args.language
+        else ("portuguese" if site_language.startswith("pt") else "english")
+    )
 
     global crawl_delay
     crawl_delay = args.delay if args.delay is not None else get_crawl_delay(base_url)
@@ -460,7 +517,15 @@ def main() -> None:
     save_visited_urls(visited_df, visited_csv)
 
     project_created_at = datetime.now().isoformat()
-    full_text, pages_data = crawl_site(domain, base_url, folder, visited_df, max_pages=args.max_pages, max_workers=args.max_workers, language=language)
+    full_text, pages_data = crawl_site(
+        domain,
+        base_url,
+        folder,
+        visited_df,
+        max_pages=args.max_pages,
+        max_workers=args.max_workers,
+        language=language,
+    )
     update_keyword_frequency(folder, domain, full_text, language=language)
     gerar_indice_markdown(folder)
 
@@ -479,18 +544,20 @@ def main() -> None:
         # Preserve original creation date
         existing_created = existing.get("created_at", project_created_at)
         # Update metadata
-        existing.update({
-            "version": VERSION,
-            "crawled_by": CRAWLED_BY,
-            "domain": domain,
-            "base_url": base_url,
-            "site_language": site_language,
-            "language": language,
-            "last_updated_at": project_updated_at,
-            "max_pages": args.max_pages,
-            "max_workers": args.max_workers,
-            "crawl_delay": crawl_delay
-        })
+        existing.update(
+            {
+                "version": VERSION,
+                "crawled_by": CRAWLED_BY,
+                "domain": domain,
+                "base_url": base_url,
+                "site_language": site_language,
+                "language": language,
+                "last_updated_at": project_updated_at,
+                "max_pages": args.max_pages,
+                "max_workers": args.max_workers,
+                "crawl_delay": crawl_delay,
+            }
+        )
         # Merge pages: replace or add by slug
         pages_map = {p["slug"]: p for p in existing.get("pages", [])}
         for p in pages_data:
@@ -529,6 +596,7 @@ def main() -> None:
 
     logger.info("Analysis completed.")
     return None
+
 
 if __name__ == "__main__":
     main()

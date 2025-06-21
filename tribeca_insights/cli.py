@@ -8,14 +8,14 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import pandas as pd
-from slugify import slugify
 
-from tribeca_insights.config import SUPPORTED_LANGUAGES, HTTP_TIMEOUT
-from tribeca_insights.storage import load_visited_urls, save_visited_urls
+from tribeca_insights.config import HTTP_TIMEOUT, SUPPORTED_LANGUAGES
 from tribeca_insights.crawler import crawl_site
+from tribeca_insights.storage import load_visited_urls, save_visited_urls
 from tribeca_insights.text_utils import setup_environment
 
 logger = logging.getLogger(__name__)
+
 
 def ask_for_domain(existing_csvs: list[Path]) -> tuple[str, str, str]:
     """
@@ -34,7 +34,7 @@ def ask_for_domain(existing_csvs: list[Path]) -> tuple[str, str, str]:
 
     choice = input("\nChoose an option (number): ").strip()
     if choice.isdigit() and 1 <= int(choice) <= len(existing_csvs):
-        slug = existing_csvs[int(choice)-1].stem.replace("visited_urls_", "")
+        slug = existing_csvs[int(choice) - 1].stem.replace("visited_urls_", "")
         base_url = f"https://{slug}"
     else:
         while True:
@@ -50,9 +50,10 @@ def ask_for_domain(existing_csvs: list[Path]) -> tuple[str, str, str]:
     for idx, lang in enumerate(SUPPORTED_LANGUAGES, start=1):
         print(f"{idx}. {lang}")
     choice = input("Choose language number [1]: ").strip() or "1"
-    language = SUPPORTED_LANGUAGES[int(choice)-1]
+    language = SUPPORTED_LANGUAGES[int(choice) - 1]
 
     return slug, base_url, language
+
 
 def main() -> None:
     """
@@ -82,24 +83,26 @@ def main() -> None:
     # Seed the home page on first run if no history exists
     if visited_df.empty:
         logger.info(f"Seeding initial URL '{base_url}' for crawl queue")
-        visited_df = pd.DataFrame([{
-            'URL': base_url,
-            'Status': 2,
-            'Data': '',
-            'MD File': ''
-        }])
+        visited_df = pd.DataFrame(
+            [{"URL": base_url, "Status": 2, "Data": "", "MD File": ""}]
+        )
         # Persist the seeded history
         save_visited_urls(visited_df, Path.cwd() / f"visited_urls_{slug}.csv")
 
     text_corpus, pages_data = crawl_site(
-        slug, base_url, Path(slug),
-        visited_df, args.max_pages,
-        args.workers, site_language=language,
-        timeout=args.timeout
+        slug,
+        base_url,
+        Path(slug),
+        visited_df,
+        args.max_pages,
+        args.workers,
+        site_language=language,
+        timeout=args.timeout,
     )
 
     logger.info("Analysis completed.")
     return None
+
 
 if __name__ == "__main__":
     main()

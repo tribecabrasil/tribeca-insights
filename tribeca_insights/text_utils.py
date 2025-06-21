@@ -7,14 +7,14 @@ Text utility functions for Tribeca Insights:
 - Environment setup (SSL + NLTK)
 """
 
+import logging
 import os
 import re
-import ssl
-import logging
 from functools import lru_cache
-from typing import List, Set, Optional
+from typing import List, Optional, Set
 
 import nltk
+
 try:
     import certifi
 except ImportError:
@@ -22,23 +22,24 @@ except ImportError:
 
 # Map CLI language codes to NLTK stopwords language names
 _LANGUAGE_MAP = {
-    'en': 'english',
-    'pt-br': 'portuguese',
-    'es': 'spanish',
-    'fr': 'french',
-    'it': 'italian',
-    'de': 'german',
-    'zh-cn': 'chinese',
-    'ja': 'japanese',
-    'ru': 'russian',
-    'ar': 'arabic'
+    "en": "english",
+    "pt-br": "portuguese",
+    "es": "spanish",
+    "fr": "french",
+    "it": "italian",
+    "de": "german",
+    "zh-cn": "chinese",
+    "ja": "japanese",
+    "ru": "russian",
+    "ar": "arabic",
 }
 
 logger = logging.getLogger(__name__)
 
 MIN_TOKEN_LENGTH = 2
-_CLEAN_RE = re.compile(r'[^A-Za-zÀ-ÿ]+')
-_SPACE_RE = re.compile(r'\s+')
+_CLEAN_RE = re.compile(r"[^A-Za-zÀ-ÿ]+")
+_SPACE_RE = re.compile(r"\s+")
+
 
 def setup_environment() -> None:
     """
@@ -49,15 +50,16 @@ def setup_environment() -> None:
     # Configure SSL to use certifi CA bundle if available
     if certifi:
         ca_path = certifi.where()
-        os.environ['SSL_CERT_FILE'] = ca_path
+        os.environ["SSL_CERT_FILE"] = ca_path
         logger.info(f"Using certifi CA bundle for SSL: {ca_path}")
 
     # Ensure stopwords corpus is present
     try:
-        nltk.download('stopwords', quiet=True)
+        nltk.download("stopwords", quiet=True)
         logger.info("NLTK stopwords ensured.")
     except Exception as e:
         logger.warning(f"Failed to download NLTK stopwords: {e}")
+
 
 @lru_cache(maxsize=None)
 def _get_stopwords(language: str) -> Set[str]:
@@ -70,8 +72,9 @@ def _get_stopwords(language: str) -> Set[str]:
         return set(nltk.corpus.stopwords.words(lang_key))
     except LookupError:
         logger.info(f"NLTK stopwords for '{lang_key}' not found. Downloading…")
-        nltk.download('stopwords', quiet=True)
+        nltk.download("stopwords", quiet=True)
         return set(nltk.corpus.stopwords.words(lang_key))
+
 
 def clean_and_tokenize(text: str, language: str = "en") -> List[str]:
     """
@@ -88,7 +91,10 @@ def clean_and_tokenize(text: str, language: str = "en") -> List[str]:
 
     # Filter stopwords and short tokens
     stop_words = _get_stopwords(language)
-    return [tok for tok in tokens if len(tok) >= MIN_TOKEN_LENGTH and tok not in stop_words]
+    return [
+        tok for tok in tokens if len(tok) >= MIN_TOKEN_LENGTH and tok not in stop_words
+    ]
+
 
 def extract_visible_text(html: str) -> str:
     """
@@ -98,14 +104,16 @@ def extract_visible_text(html: str) -> str:
     :return: visible text
     """
     from bs4 import BeautifulSoup
-    soup = BeautifulSoup(html, 'html.parser')
+
+    soup = BeautifulSoup(html, "html.parser")
     # kill scripts/styles
-    for tag in soup(['script', 'style', 'header', 'footer', 'nav']):
+    for tag in soup(["script", "style", "header", "footer", "nav"]):
         tag.decompose()
     text = soup.get_text(separator=" ")
     # Collapse multiple whitespace characters
-    text = re.sub(r'\s+', ' ', text).strip()
+    text = re.sub(r"\s+", " ", text).strip()
     return text
+
 
 def safe_strip(value: Optional[str]) -> str:
     """

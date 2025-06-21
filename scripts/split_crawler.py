@@ -12,12 +12,11 @@ Provides:
 import json
 import logging
 from pathlib import Path
+from typing import Dict, List, Set
 
 import pandas as pd
 
 from tribeca_insights.exporters.json import JSON_DUMP_KWARGS
-
-from typing import List, Set, Dict
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +63,11 @@ def export_index_json(folder: Path, pages_data: List[Dict]) -> None:
         export_index_json(Path('example'), pages_data)
     """
     index = [
-        {"slug": p["slug"], "title": p.get("title", ""), "md_filename": p.get("md_filename", "")}
+        {
+            "slug": p["slug"],
+            "title": p.get("title", ""),
+            "md_filename": p.get("md_filename", ""),
+        }
         for p in pages_data
     ]
     index_path = folder / INDEX_FILE
@@ -113,13 +116,17 @@ def export_keyword_frequency_json(folder: Path, domain: str) -> None:
     json_path = folder / FREQ_JSON_TEMPLATE.format(domain)
     try:
         df = pd.read_csv(csv_path)
-        freq = dict(zip(df['word'], df['freq']))
+        freq = dict(zip(df["word"], df["freq"]))
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(freq, f, ensure_ascii=False, indent=2)
     except Exception as e:
-        logger.error(f"Failed to export keyword frequency JSON for domain '{domain}' from {csv_path}: {e}")
+        logger.error(
+            f"Failed to export keyword frequency JSON for domain '{domain}' from {csv_path}: {e}"
+        )
     else:
-        logger.info(f"Exported keyword frequency JSON for domain '{domain}' with {len(freq)} entries to {json_path}")
+        logger.info(
+            f"Exported keyword frequency JSON for domain '{domain}' with {len(freq)} entries to {json_path}"
+        )
     return None
 
 
@@ -138,7 +145,9 @@ def export_visited_urls_json(visited_csv: Path) -> None:
         df = pd.read_csv(visited_csv)
         df.to_json(json_path, orient="records", force_ascii=False, indent=2)
     except Exception as e:
-        logger.error(f"Failed to export visited URLs JSON from {visited_csv} to {json_path}: {e}")
+        logger.error(
+            f"Failed to export visited URLs JSON from {visited_csv} to {json_path}: {e}"
+        )
     else:
         logger.info(f"Exported visited URLs JSON with {len(df)} records to {json_path}")
     return None
