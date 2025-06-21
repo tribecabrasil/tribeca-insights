@@ -11,7 +11,7 @@ import logging
 import os
 import re
 from functools import lru_cache
-from typing import List, Optional, Set
+from typing import Dict, List, Optional, Set
 
 import nltk
 
@@ -32,6 +32,12 @@ _LANGUAGE_MAP = {
     "ja": "japanese",
     "ru": "russian",
     "ar": "arabic",
+}
+
+_FALLBACK_STOPWORDS: Dict[str, Set[str]] = {
+    "english": {"the", "this", "and", "of"},
+    "spanish": {"y", "de", "la"},
+    "portuguese": {"e", "de", "a"},
 }
 
 logger = logging.getLogger(__name__)
@@ -71,9 +77,18 @@ def _get_stopwords(language: str) -> Set[str]:
     try:
         return set(nltk.corpus.stopwords.words(lang_key))
     except LookupError:
+        if lang_key in _FALLBACK_STOPWORDS:
+            logger.info(
+                f"NLTK stopwords for '{lang_key}' not found. Using fallback set."
+            )
+            return _FALLBACK_STOPWORDS[lang_key]
         logger.info(f"NLTK stopwords for '{lang_key}' not found. Downloading…")
-        nltk.download("stopwords", quiet=True)
-        return set(nltk.corpus.stopwords.words(lang_key))
+        try:
+            nltk.download("stopwords", quiet=True)
+            return set(nltk.corpus.stopwords.words(lang_key))
+        except Exception as exc:  # pragma: no cover - fallback on failure
+            logger.warning(f"Failed to download stopwords: {exc}")
+            return set()
 
 
 def clean_and_tokenize(text: str, language: str = "en") -> List[str]:

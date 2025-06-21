@@ -130,10 +130,11 @@ Tribeca Insights opera em oito etapas principais:
    - O usuário executa o comando `tribeca-insights`, passando `--max-pages`, `--language` e opcionalmente `--domain`.  
    - Internamente, o CLI (`tribeca_insights.cli`) valida inputs e configura o ambiente (SSL e recursos NLTK).
 
-2. **Configuração de pasta de projeto**  
-   - Cria uma pasta `<domain_slug>/` (ex: `example-com/`) com subdiretórios:  
-     - `pages_md/` para arquivos Markdown.  
-     - `pages_json/` para JSON de cada página.
+2. **Configuração de pasta de projeto**
+   - Cria uma pasta `<domain_slug>/` (ex: `example-com/`) com:
+     - `project_<domain_slug>_template.json` copiado de `docs/examples/project_DOMAIN_template.json`.
+     - `pages_md/` para arquivos Markdown.
+     - `pages_json/` para JSON de cada página (estrutura igual ao objeto `pages` do JSON do projeto).
 
 3. **Carregamento de histórico**  
    - Usa `load_visited_urls` para ler `visited_urls_<domain>.csv` e identificar URLs já processadas.  

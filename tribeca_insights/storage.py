@@ -5,6 +5,7 @@ Manages the visited URLs log and extracts URLs from sitemaps.
 """
 
 import logging
+import shutil
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
@@ -16,6 +17,28 @@ from slugify import slugify
 from tribeca_insights.config import HTTP_TIMEOUT, session
 
 logger = logging.getLogger(__name__)
+
+
+def setup_project_folder(domain_slug: str, base_path: Path | str = Path.cwd()) -> Path:
+    """Create project folder with template and subdirectories."""
+    folder = Path(base_path) / domain_slug
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "pages_md").mkdir(parents=True, exist_ok=True)
+    (folder / "pages_json").mkdir(parents=True, exist_ok=True)
+    template_src = (
+        Path(__file__).resolve().parent.parent
+        / "docs"
+        / "examples"
+        / "project_DOMAIN_template.json"
+    )
+    template_dst = folder / f"project_{domain_slug}_template.json"
+    if not template_dst.exists():
+        try:
+            shutil.copyfile(template_src, template_dst)
+            logger.info(f"Created template JSON at {template_dst}")
+        except Exception as exc:  # pragma: no cover - log error only
+            logger.error(f"Failed to copy template JSON: {exc}")
+    return folder
 
 
 def load_visited_urls(base_path: Path, domain: str) -> pd.DataFrame:
