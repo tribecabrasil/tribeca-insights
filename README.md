@@ -137,6 +137,7 @@ Tribeca Insights opera em oito etapas principais:
 1. **Entrada de parâmetros**
    - O usuário executa `tribeca-insights crawl` informando `--slug`, `--base-url`, `--max-pages` e `--language`.
    - Internamente, o CLI (`tribeca_insights.cli`) valida inputs e configura o ambiente (SSL e recursos NLTK).
+   - Se o download automático das stopwords falhar, o log indicará executar `python -m nltk.downloader stopwords` para instalá-las manualmente.
 
 2. **Configuração de pasta de projeto**
    - Cria uma pasta `<domain_slug>/` (ex: `example-com/`) com:
