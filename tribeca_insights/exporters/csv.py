@@ -52,7 +52,7 @@ def update_keyword_frequency(
         df.to_csv(csv_path, index=False)
         logger.info(f"Exported {len(df)} keyword frequencies to {csv_path}")
         print(f"[Tribeca Insights] Keyword frequency CSV exported to: {csv_path}")
-    except Exception as e:
+    except OSError as e:
         logger.error(f"Failed to write CSV {csv_path}: {e}")
     return None
 
@@ -78,7 +78,7 @@ def export_external_urls(folder: Path, external_links: Set[str]) -> None:
                 for link in sorted(external_links):
                     f.write(f"- {link}\n")
         logger.info(f"Exported {len(external_links)} external URLs to {md_path}")
-    except Exception as e:
+    except OSError as e:
         logger.error(f"Failed to write Markdown {md_path}: {e}")
     return None
 
@@ -99,7 +99,7 @@ def export_csv(input_dir: str, out_file: str) -> None:
             with open(fname, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 all_text.append(data.get("text", ""))
-        except Exception as e:
+        except (OSError, json.JSONDecodeError) as e:
             logger.warning(f"Error reading {fname}: {e}")
     full_text = "\n".join(all_text)
     update_keyword_frequency(Path(out_file).parent, Path(out_file).stem, full_text)
