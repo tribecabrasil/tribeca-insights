@@ -47,6 +47,12 @@ O alvo `make run` executa um crawl de demonstração no domínio
 - Execução de testes
 - Execução de uma varredura padrão
 
+Para remover todos os relatórios e caches gerados, utilize:
+
+```bash
+make clean-all
+```
+
 ## Uso
 
 ### Via Subcomando
