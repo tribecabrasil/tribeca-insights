@@ -41,11 +41,6 @@ def export_page_to_markdown(
     :param html: raw HTML content
     :param domain: domain slug for URL parsing
     :param external_links: set to collect external links
-    :return: None
-    :Example:
-        export_page_to_markdown(
-            Path('example'), 'https://example.com', '<html>...</html>', 'example.com', set()
-        )
     """
     soup = BeautifulSoup(html, "html.parser")
     try:
@@ -83,20 +78,36 @@ def export_page_to_markdown(
     pages_dir.mkdir(parents=True, exist_ok=True)
     filepath = pages_dir / f"{slug}.md"
     with open(filepath, "w", encoding="utf-8") as f:
-        f.write(f"# Page Analysis: `{url}`\n\n")
-        f.write(f"**Title:** {title}\n\n")
-        f.write(f"**Meta Description:** {description}\n\n")
-        f.write("## Headings Hierarchy\n")
-        f.write("\n".join(headings) if headings else "_No headings found._")
+        f.write(f"# `{url}`\n\n")
+        f.write(f"**Title**: {title}\n\n")
+        f.write(f"**Meta Description**: {description}\n\n")
+
+        f.write("## Headings\n")
+        f.write("\n".join(f"- {h}" for h in headings) if headings else "_No headings found._")
         f.write("\n\n")
-        f.write("## Main Content (cleaned)\n")
-        f.write(f"```\n{visible_text[:3000]}...\n```\n\n")
-        f.write("## Word Frequency (top 20)\n")
-        for word, freq in local_freq.most_common(20):
+
+        f.write("## Word Frequency (Top 50)\n")
+        for word, freq in local_freq.most_common(50):
             f.write(f"- **{word}**: {freq}\n")
-        f.write("\n## Images with ALT Texts\n")
+        f.write("\n")
+
+        f.write("## External Links\n")
+        f.write("\n".join(f"- {link}" for link in external) if external else "_No external links found._")
+        f.write("\n\n")
+
+        f.write("## Images with ALT\n")
         f.write("\n".join(image_lines) if image_lines else "_No images found._\n")
-        f.write("\n---\n")
+        f.write("\n")
+
+        f.write("## Cleaned Text\n")
+        f.write(f"```\n{visible_text[:3000]}...\n```\n\n")
+
+        f.write("## Raw HTML\n")
+        f.write("```html\n")
+        f.write(html[:5000])
+        f.write("\n... (truncated)\n```\n\n")
+
+        f.write("---\n")
         f.write(f"_Total words analyzed: {len(tokens)}_\n")
     logger.info(f"Exported Markdown for {url} to {filepath}")
     return None
@@ -106,9 +117,6 @@ def export_index_markdown(folder: Path) -> None:
     """Generate Markdown index of analyzed pages.
 
     :param folder: base project folder containing pages_md directory
-    :return: None
-    :Example:
-        export_index_markdown(Path('example'))
     """
     pages_dir = folder / MD_PAGES_DIR
     index_path = folder / INDEX_FILENAME
@@ -122,3 +130,19 @@ def export_index_markdown(folder: Path) -> None:
             f.write(f"- [{title}]({rel_path})\n")
     logger.info(f"Exported index Markdown to {index_path}")
     return None
+
+
+def export_markdown(input_dir: Path | str, out_dir: Path | str) -> None:
+    """
+    Unified Markdown export interface.
+    Currently, this function simply generates the index for Markdown reports.
+
+    :param input_dir: Path to the domain folder
+    :param out_dir: Path to write pages_md and index.md
+    """
+    input_dir = Path(input_dir)
+    out_dir = Path(out_dir)
+    export_index_markdown(out_dir)
+
+
+__all__ = ["export_page_to_markdown", "export_index_markdown", "export_markdown"]

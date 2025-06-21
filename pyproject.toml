@@ -29,8 +29,6 @@ classifiers = [
 "Homepage"   = "https://github.com/tribecabrasil/tribeca-insights"
 "Repository" = "https://github.com/tribecabrasil/tribeca-insights.git"
 
-[project.scripts]
-tribeca-insights = "tribeca_insights.cli:main"
 
 [project.optional-dependencies]
 dev = [
@@ -42,6 +40,9 @@ dev = [
   "black>=23.9",
   "isort>=5.0"
 ]
+
+[project.entry-points.console_scripts]
+tribeca-insights = "tribeca_insights.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

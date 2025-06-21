@@ -21,34 +21,51 @@ Tribeca Insights é uma ferramenta modular de análise SEO e extração semânti
    cd tribeca-insights
    ```
 
-2. Instale em modo de desenvolvimento:
+> 💡 Recomendado: Crie e ative um ambiente virtual com Python 3.10+
+> 
+> ```bash
+> python3 -m venv .venv
+> source .venv/bin/activate
+> ```
+
+2. Configure o ambiente automaticamente com Make:
    ```bash
-   pip install --upgrade pip
-   pip install -e .
+   make init
    ```
 
-3. Prepare recursos NLTK (stopwords):
-   ```bash
-   python3 -c "import nltk; nltk.download('stopwords')"
-   ```
+## Automação
 
-   **Observação (macOS):** se ocorrer erro de certificado SSL ao baixar dados, instale o pacote `certifi` e configure o caminho de certificados:
-   ```bash
-   python3 -m pip install --upgrade certifi
-   export SSL_CERT_FILE="$(python3 - <<'PYCODE'
-import certifi; print(certifi.where())
-PYCODE
-   )"
-   python3 -c "import nltk; nltk.download('stopwords')"
-   ```
+Você pode rodar o fluxo completo com um único comando:
+```bash
+make init && make test && make run
+```
 
+Isso garante:
+- Criação e ativação do ambiente virtual (recomendado)
+- Instalação das dependências
+- Execução de testes
+- Execução de uma varredura padrão
 
 ## Uso
 
-Use este comando para iniciar a varredura, especificando o número máximo de páginas, idioma, número de threads e timeout de requisição:
+### Via Subcomando
 
+Inicie uma varredura:
 ```bash
-tribeca-insights --max-pages 50 --language en --workers 5 --timeout 10
+tribeca-insights crawl example.com --base-url https://example.com --language pt-br --max-pages 50
+```
+
+Exporte relatórios:
+```bash
+tribeca-insights export md --domain example.com
+tribeca-insights export csv --domain example.com
+tribeca-insights export json --domain example.com
+```
+
+### Ajuda
+Para ver todos os comandos disponíveis:
+```bash
+tribeca-insights --help
 ```
 
 Opções:
@@ -72,6 +89,36 @@ tribeca-insights --max-pages 20 --language pt-br --workers 4 --timeout 8
 ```
 
 Isso criará uma pasta `example-com/` com toda a estrutura de relatórios.
+
+### Exemplo de uso via subcomando
+
+Para iniciar uma varredura com subcomando:
+
+```bash
+tribeca-insights crawl example.com --base-url https://example.com --language pt-br --max-pages 50
+```
+
+Para exportar relatórios:
+
+```bash
+tribeca-insights export md --domain example.com
+tribeca-insights export csv --domain example.com
+tribeca-insights export json --domain example.com
+```
+
+### Automação com Make
+
+O fluxo completo pode ser executado com:
+
+```bash
+make init && make test && make run
+```
+
+Isso garante:
+- (Opcional) Criação do ambiente virtual
+- Instalação das dependências
+- Execução dos testes
+- Varredura padrão com configurações do projeto
 
 ## Como Funciona
 
@@ -201,6 +248,21 @@ In addition to PEP 8 and PEP 257, the following PEPs improve code readability, t
 
 - **PEP 20 – The Zen of Python**  
   Principles guiding Pythonic design and readability (`import this`).
+
+## Config Overrides
+
+To keep personal editor or environment settings out of version control, add your local override files to `.gitignore`:
+```gitignore
+# Local overrides
+pyrightconfig.json
+pyproject.toml
+.flake8
+setup.cfg
+Makefile
+update.sh
+```
+
+The included `Makefile` and `update.sh` scripts help avoid manual steps and standardize the environment setup.
 
 ## Pyright Configuration
 

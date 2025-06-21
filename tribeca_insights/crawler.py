@@ -206,10 +206,10 @@ def crawl_site(
                     text_corpus.append(visible_text)
                 external_links.update(ext_links)
                 visited_df.loc[visited_df["URL"] == url, "Status"] = 1
-                visited_df.loc[visited_df["URL"] == url, "Data"] = (
-                    datetime.now().strftime("%Y-%m-%d")
-                )
+                visited_df["Data"] = visited_df["Data"].astype(str)
+                visited_df.loc[visited_df["URL"] == url, "Data"] = datetime.now().strftime("%Y-%m-%d")
                 if md_filename:
+                    visited_df["MD File"] = visited_df["MD File"].astype(str)
                     visited_df.loc[visited_df["URL"] == url, "MD File"] = md_filename
                 if page_data:
                     pages_data.append(page_data)

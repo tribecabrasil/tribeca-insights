@@ -3,6 +3,7 @@
 CLI entrypoint for Tribeca Insights.
 """
 import argparse
+import importlib.metadata
 import logging
 from pathlib import Path
 from urllib.parse import urlparse
@@ -17,88 +18,66 @@ from tribeca_insights.text_utils import setup_environment
 logger = logging.getLogger(__name__)
 
 
-def ask_for_domain(existing_csvs: list[Path]) -> tuple[str, str, str]:
-    """
-    Prompt user to select an existing domain or enter a new URL,
-    then choose the site language.
-
-    :param existing_csvs: list of Paths to visited_urls CSV files
-    :return: tuple (slug, base_url, language)
-    """
-    # List existing
-    print("\n📁 Domains already analyzed:")
-    for idx, path in enumerate(existing_csvs, start=1):
-        slug = path.stem.replace("visited_urls_", "")
-        print(f"{idx}. {slug}")
-    print(f"{len(existing_csvs)+1}. Enter new URL")
-
-    choice = input("\nChoose an option (number): ").strip()
-    if choice.isdigit() and 1 <= int(choice) <= len(existing_csvs):
-        slug = existing_csvs[int(choice) - 1].stem.replace("visited_urls_", "")
-        base_url = f"https://{slug}"
-    else:
-        while True:
-            base_url = input("Enter the new URL: ").strip()
-            parsed = urlparse(base_url)
-            if parsed.scheme and parsed.netloc:
-                slug = parsed.netloc.replace("www.", "")
-                break
-            print("Invalid URL, please try again.")
-
-    # Language selection
-    print("\nSupported site languages:")
-    for idx, lang in enumerate(SUPPORTED_LANGUAGES, start=1):
-        print(f"{idx}. {lang}")
-    choice = input("Choose language number [1]: ").strip() or "1"
-    language = SUPPORTED_LANGUAGES[int(choice) - 1]
-
-    return slug, base_url, language
-
-
 def main() -> None:
     """
     Main entrypoint: parse CLI args, set up environment, run crawl and exports.
     """
     parser = argparse.ArgumentParser(description="Tribeca Insights CLI")
-    parser.add_argument("--max-pages", type=int, default=50)
-    parser.add_argument("--language", choices=SUPPORTED_LANGUAGES, default="en")
-    parser.add_argument("--workers", type=int, default=5)
-    parser.add_argument("--timeout", type=int, default=HTTP_TIMEOUT)
-    parser.add_argument("--domain", type=str, default=None)
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=importlib.metadata.version("tribeca-insights"),
+        help="Show program version and exit",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Enable debug logging",
+    )
+    # add subcommands
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    # crawl subcommand
+    crawl_parser = subparsers.add_parser("crawl", help="Crawl a site")
+    crawl_parser.add_argument("--max-pages", type=int, default=50, help="Maximum number of pages to crawl")
+    crawl_parser.add_argument("--language", choices=SUPPORTED_LANGUAGES, default="en", help="Language code for stopwords")
+    crawl_parser.add_argument("--workers", type=int, default=5, help="Number of worker threads for crawling")
+    crawl_parser.add_argument("--timeout", type=int, default=HTTP_TIMEOUT, help="HTTP request timeout in seconds")
+    crawl_parser.add_argument("--slug", type=str, required=True, help="Site slug (e.g. 'next-health.com')")
+    crawl_parser.add_argument("--base-url", type=str, required=True, help="Base URL to start crawling (e.g. 'https://www.next-health.com')")
+
+    # export subcommand
+    export_parser = subparsers.add_parser("export", help="Export the latest crawl data")
+    export_parser.add_argument("--slug", type=str, required=True, help="Site slug identifier for export")
+    export_parser.add_argument("--format", choices=["csv","json","markdown"], default="csv", help="Export format: csv, json, or markdown")
+
     args = parser.parse_args()
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+    else:
+        logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
     setup_environment()
 
-    if args.domain:
-        slug = urlparse(args.domain).netloc.replace("www.", "")
-        base_url = args.domain
-        language = args.language
-    else:
-        existing = list(Path.cwd().glob("visited_urls_*.csv"))
-        slug, base_url, language = ask_for_domain(existing)
-
-    # Load or initialize visited URLs history
-    visited_df = load_visited_urls(Path.cwd(), slug)
-
-    # Seed the home page on first run if no history exists
-    if visited_df.empty:
-        logger.info(f"Seeding initial URL '{base_url}' for crawl queue")
-        visited_df = pd.DataFrame(
-            [{"URL": base_url, "Status": 2, "Data": "", "MD File": ""}]
+    if args.command == "crawl":
+        cmd_args = args
+        slug = cmd_args.slug
+        base_url = cmd_args.base_url
+        language = cmd_args.language
+        visited_df = load_visited_urls(Path.cwd(), slug)
+        if visited_df.empty:
+            logger.info(f"Seeding initial URL '{base_url}' for crawl queue")
+            visited_df = pd.DataFrame([{"URL": base_url, "Status": 2, "Data": "", "MD File": ""}])
+            save_visited_urls(visited_df, Path.cwd() / f"visited_urls_{slug}.csv")
+        crawl_site(
+            slug, base_url, Path(slug), visited_df,
+            cmd_args.max_pages, cmd_args.workers,
+            site_language=language, timeout=cmd_args.timeout,
         )
-        # Persist the seeded history
-        save_visited_urls(visited_df, Path.cwd() / f"visited_urls_{slug}.csv")
-
-    text_corpus, pages_data = crawl_site(
-        slug,
-        base_url,
-        Path(slug),
-        visited_df,
-        args.max_pages,
-        args.workers,
-        site_language=language,
-        timeout=args.timeout,
-    )
+    elif args.command == "export":
+        from tribeca_insights.exporters import export_data  # implement export_data()
+        export_data(args.slug, args.format)
 
     logger.info("Analysis completed.")
     return None

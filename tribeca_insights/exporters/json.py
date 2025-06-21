@@ -22,19 +22,6 @@ JSON_DUMP_KWARGS = {"ensure_ascii": False, "indent": 2}
 
 
 def export_pages_json(folder: Path, pages_data: List[Dict]) -> None:
-    """
-    Export each page data as individual JSON files in pages_json/ directory.
-
-    Example:
-        export_pages_json(Path("./output"), pages_data)
-
-    Args:
-        folder (Path): The folder to export JSON files into.
-        pages_data (List[Dict]): List of page data dictionaries.
-
-    Returns:
-        None
-    """
     folder.mkdir(parents=True, exist_ok=True)
     pages_json_dir = folder / JSON_PAGES_DIR
     pages_json_dir.mkdir(exist_ok=True, parents=True)
@@ -51,19 +38,6 @@ def export_pages_json(folder: Path, pages_data: List[Dict]) -> None:
 
 
 def export_index_json(folder: Path, pages_data: List[Dict]) -> None:
-    """
-    Generate index.json with a list of {slug, title, md_filename} for each page.
-
-    Example:
-        export_index_json(Path("./output"), pages_data)
-
-    Args:
-        folder (Path): The folder to export index.json into.
-        pages_data (List[Dict]): List of page data dictionaries.
-
-    Returns:
-        None
-    """
     folder.mkdir(parents=True, exist_ok=True)
     index = [
         {
@@ -85,19 +59,6 @@ def export_index_json(folder: Path, pages_data: List[Dict]) -> None:
 
 
 def export_external_urls_json(folder: Path, external_links: Set[str]) -> None:
-    """
-    Generate external_urls.json containing a list of external URLs.
-
-    Example:
-        export_external_urls_json(Path("./output"), external_links)
-
-    Args:
-        folder (Path): The folder to export external_urls.json into.
-        external_links (Set[str]): Set of external URLs.
-
-    Returns:
-        None
-    """
     folder.mkdir(parents=True, exist_ok=True)
     path = folder / JSON_EXTERNAL
     urls_list = sorted(list(external_links))
@@ -121,19 +82,6 @@ def export_external_urls_json(folder: Path, external_links: Set[str]) -> None:
 
 
 def export_keyword_frequency_json(folder: Path, domain: str) -> None:
-    """
-    Read keyword_frequency_<domain>.csv and generate keyword_frequency_<domain>.json with {word: freq}.
-
-    Example:
-        export_keyword_frequency_json(Path("./output"), "example.com")
-
-    Args:
-        folder (Path): The folder containing the CSV and to export JSON into.
-        domain (str): The domain name used in the filename.
-
-    Returns:
-        None
-    """
     csv_path = folder / f"keyword_frequency_{domain}.csv"
     json_path = folder / JSON_FREQ_TEMPLATE.format(domain)
     if not csv_path.exists():
@@ -156,18 +104,6 @@ def export_keyword_frequency_json(folder: Path, domain: str) -> None:
 
 
 def export_visited_urls_json(visited_csv: Path) -> None:
-    """
-    Generate visited_urls_<domain>.json alongside the visited CSV file.
-
-    Example:
-        export_visited_urls_json(Path("./output/visited_urls_example.com.csv"))
-
-    Args:
-        visited_csv (Path): Path to the visited URLs CSV file.
-
-    Returns:
-        None
-    """
     if not visited_csv.exists():
         logger.warning(f"visited_urls CSV not found: {visited_csv}")
         return None
@@ -183,3 +119,29 @@ def export_visited_urls_json(visited_csv: Path) -> None:
             f"Exported visited URLs JSON with {len(df)} records to: {json_path}"
         )
     return None
+
+
+def export_json(input_dir: str, out_file: str) -> None:
+    """
+    Combine all JSON page files from a directory into a single file.
+    """
+    input_path = Path(input_dir)
+    if not input_path.exists():
+        raise FileNotFoundError(f"Directory does not exist: {input_dir}")
+
+    combined = []
+    for json_file in input_path.glob("*.json"):
+        try:
+            with open(json_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                combined.append(data)
+        except Exception as e:
+            logger.error(f"Failed to read {json_file}: {e}")
+
+    try:
+        with open(out_file, "w", encoding="utf-8") as f:
+            json.dump(combined, f, **JSON_DUMP_KWARGS)
+    except Exception as e:
+        logger.error(f"Failed to write combined JSON to {out_file}: {e}")
+    else:
+        logger.info(f"✅ Exported combined JSON to {out_file}")

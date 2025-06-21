@@ -16,16 +16,30 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.13'
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e .
-          pip install pytest flake8 pyright
+          pip install pytest flake8 pyright pandas-stubs types-requests
 
-      - name: Run tests
-        run: pytest -q
+      - name: Update certificates (macOS workaround)
+        run: |
+          python3 tribeca_insights/config.py
+
+      - name: Run tests with coverage
+        run: |
+          pip install coverage
+          coverage run -m pytest
+          coverage report
+          coverage xml
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: coverage.xml
 
       - name: Lint with flake8
         run: flake8 tribeca_insights tests

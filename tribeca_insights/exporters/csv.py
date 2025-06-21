@@ -8,18 +8,16 @@ Export CSV utilities for Tribeca Insights.
 import logging
 from collections import Counter
 from pathlib import Path
-from typing import Set
+from typing import Set, Optional
 
 import pandas as pd
 
 from tribeca_insights.text_utils import clean_and_tokenize
+from tribeca_insights.exporters.constants import CSV_FILENAME_TEMPLATE, MD_FILENAME, MD_HEADER
 
 logger = logging.getLogger(__name__)
 
-# Filename templates
-CSV_FILENAME_TEMPLATE = "keyword_frequency_{}.csv"
-MD_FILENAME = "external_urls.md"
-MD_HEADER = "# Collected External URLs\n\n"
+# (removidas — agora importadas de constants)
 
 
 def update_keyword_frequency(
@@ -33,28 +31,23 @@ def update_keyword_frequency(
     :param full_text: concatenated text from all pages
     :param language: language code for tokenization (e.g., "english")
     :return: None
-    :Example:
-        update_keyword_frequency(Path('example'), 'example-com', 'hello world', 'english')
     """
     folder.mkdir(parents=True, exist_ok=True)
     tokens: list[str] = clean_and_tokenize(full_text, language)
-    freq: Counter = Counter(tokens)
-    csv_path = folder / CSV_FILENAME_TEMPLATE.format(domain)
-    existing_df = pd.DataFrame()
+    freq: Counter[str] = Counter(tokens)
+    csv_path: Path = folder / CSV_FILENAME_TEMPLATE.format(domain)
     if csv_path.exists():
-        try:
-            existing_df = pd.read_csv(csv_path)
-            combined = Counter(dict(zip(existing_df["word"], existing_df["freq"])))
-            combined.update(freq)
-            freq = combined
-        except Exception as e:
-            logger.warning(f"Could not read existing CSV {csv_path}: {e}")
-    df = pd.DataFrame(freq.items(), columns=["word", "freq"]).sort_values(
-        by="freq", ascending=False
-    )
+        logger.info(f"Overwriting existing keyword frequency file: {csv_path}")
+    if freq:
+        df: pd.DataFrame = pd.DataFrame(freq.items(), columns=["word", "freq"]).sort_values(
+            by="freq", ascending=False
+        )
+    else:
+        df = pd.DataFrame(columns=["word", "freq"])
     try:
         df.to_csv(csv_path, index=False)
         logger.info(f"Exported {len(df)} keyword frequencies to {csv_path}")
+        print(f"[Tribeca Insights] Keyword frequency CSV exported to: {csv_path}")
     except Exception as e:
         logger.error(f"Failed to write CSV {csv_path}: {e}")
     return None
@@ -84,3 +77,25 @@ def export_external_urls(folder: Path, external_links: Set[str]) -> None:
     except Exception as e:
         logger.error(f"Failed to write Markdown {md_path}: {e}")
     return None
+
+def export_csv(input_dir: str, out_file: str) -> None:
+    """
+    Export combined keyword frequency CSV from a directory of JSON page files.
+
+    :param input_dir: directory containing page JSON files
+    :param out_file: output CSV file path
+    """
+    import json
+    import os
+    from pathlib import Path
+
+    all_text = []
+    for fname in Path(input_dir).glob("*.json"):
+        try:
+            with open(fname, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                all_text.append(data.get("text", ""))
+        except Exception as e:
+            logger.warning(f"Error reading {fname}: {e}")
+    full_text = "\n".join(all_text)
+    update_keyword_frequency(Path(out_file).parent, Path(out_file).stem, full_text)
