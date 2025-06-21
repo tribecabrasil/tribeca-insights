@@ -11,17 +11,10 @@ import pandas as pd
 
 from tribeca_insights.config import HTTP_TIMEOUT, SUPPORTED_LANGUAGES
 from tribeca_insights.crawler import crawl_site
-from tribeca_insights.exporters.csv import update_keyword_frequency
-from tribeca_insights.exporters.json import (
-    export_external_urls_json,
-    export_index_json,
-    export_keyword_frequency_json,
-    export_pages_json,
-    export_visited_urls_json,
-)
-from tribeca_insights.exporters.markdown import export_index_markdown
 from tribeca_insights.storage import (
+    add_urls_from_sitemap,
     load_visited_urls,
+    reconcile_md_files,
     save_visited_urls,
     setup_project_folder,
 )
@@ -47,53 +40,7 @@ def main() -> None:
         action="store_true",
         help="Enable debug logging",
     )
-    # add subcommands
-    subparsers = parser.add_subparsers(dest="command", required=True)
-
-    # crawl subcommand
-    crawl_parser = subparsers.add_parser("crawl", help="Crawl a site")
-    crawl_parser.add_argument(
-        "--max-pages", type=int, default=50, help="Maximum number of pages to crawl"
-    )
-    crawl_parser.add_argument(
-        "--language",
-        choices=SUPPORTED_LANGUAGES,
-        default="en",
-        help="Language code for stopwords",
-    )
-    crawl_parser.add_argument(
-        "--workers", type=int, default=5, help="Number of worker threads for crawling"
-    )
-    crawl_parser.add_argument(
-        "--timeout",
-        type=int,
-        default=HTTP_TIMEOUT,
-        help="HTTP request timeout in seconds",
-    )
-    crawl_parser.add_argument(
-        "--slug", type=str, required=True, help="Site slug (e.g. 'next-health.com')"
-    )
-    crawl_parser.add_argument(
-        "--base-url",
-        type=str,
-        required=True,
-        help="Base URL to start crawling (e.g. 'https://www.next-health.com')",
-    )
-
-    # export subcommand
-    export_parser = subparsers.add_parser("export", help="Export the latest crawl data")
-    export_parser.add_argument(
-        "--slug", type=str, required=True, help="Site slug identifier for export"
-    )
-    export_parser.add_argument(
-        "--format",
-        choices=["csv", "json", "markdown"],
-        default="csv",
-        help="Export format: csv, json, or markdown",
-    )
-
-    args = parser.parse_args()
-    if args.verbose:
+@@ -88,46 +90,50 @@ def main() -> None:
         logging.basicConfig(
             level=logging.DEBUG,
             format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -119,7 +66,11 @@ def main() -> None:
                 [{"URL": base_url, "Status": 2, "Data": "", "MD File": ""}]
             )
             save_visited_urls(visited_df, Path.cwd() / f"visited_urls_{slug}.csv")
-        full_text, pages_data = crawl_site(
+
+        visited_df = reconcile_md_files(visited_df, project_folder)
+        visited_df = add_urls_from_sitemap(base_url, visited_df)
+        save_visited_urls(visited_df, Path.cwd() / f"visited_urls_{slug}.csv")
+        crawl_site(
             slug,
             base_url,
             project_folder,
@@ -129,17 +80,6 @@ def main() -> None:
             site_language=language,
             timeout=cmd_args.timeout,
         )
-        update_keyword_frequency(project_folder, slug, full_text, language)
-        export_pages_json(project_folder, pages_data)
-        export_index_json(project_folder, pages_data)
-        export_keyword_frequency_json(project_folder, slug)
-        visited_csv = project_folder / f"visited_urls_{slug}.csv"
-        export_visited_urls_json(visited_csv)
-        external_links = {
-            link for page in pages_data for link in page.get("external_links", [])
-        }
-        export_external_urls_json(project_folder, external_links)
-        export_index_markdown(project_folder)
     elif args.command == "export":
         from tribeca_insights.exporters import export_data  # implement export_data()
 
