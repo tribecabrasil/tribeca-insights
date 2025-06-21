@@ -25,7 +25,6 @@ dist/
 # Dados e outputs
 pages_md/
 pages_json/
-next-health-com/
 seo_history.duckdb
 external_urls.md
 index.md
@@ -36,6 +35,7 @@ index.md
 # Generated output files
 *.json
 *.md
+!chatgpt_guidelines.md
 
 # Shell script files
 *.sh
