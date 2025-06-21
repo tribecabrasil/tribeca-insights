@@ -8,12 +8,16 @@ Export CSV utilities for Tribeca Insights.
 import logging
 from collections import Counter
 from pathlib import Path
-from typing import Set, Optional
+from typing import Set
 
 import pandas as pd
 
+from tribeca_insights.exporters.constants import (
+    CSV_FILENAME_TEMPLATE,
+    MD_FILENAME,
+    MD_HEADER,
+)
 from tribeca_insights.text_utils import clean_and_tokenize
-from tribeca_insights.exporters.constants import CSV_FILENAME_TEMPLATE, MD_FILENAME, MD_HEADER
 
 logger = logging.getLogger(__name__)
 
@@ -39,9 +43,9 @@ def update_keyword_frequency(
     if csv_path.exists():
         logger.info(f"Overwriting existing keyword frequency file: {csv_path}")
     if freq:
-        df: pd.DataFrame = pd.DataFrame(freq.items(), columns=["word", "freq"]).sort_values(
-            by="freq", ascending=False
-        )
+        df: pd.DataFrame = pd.DataFrame(
+            freq.items(), columns=["word", "freq"]
+        ).sort_values(by="freq", ascending=False)
     else:
         df = pd.DataFrame(columns=["word", "freq"])
     try:
@@ -78,6 +82,7 @@ def export_external_urls(folder: Path, external_links: Set[str]) -> None:
         logger.error(f"Failed to write Markdown {md_path}: {e}")
     return None
 
+
 def export_csv(input_dir: str, out_file: str) -> None:
     """
     Export combined keyword frequency CSV from a directory of JSON page files.
@@ -86,7 +91,6 @@ def export_csv(input_dir: str, out_file: str) -> None:
     :param out_file: output CSV file path
     """
     import json
-    import os
     from pathlib import Path
 
     all_text = []

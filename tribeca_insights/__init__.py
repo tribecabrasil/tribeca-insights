@@ -1,6 +1,7 @@
 # tribeca_insights/__init__.py
 
 import os
+
 import certifi
 
 # Garante que qualquer download (NLTK, requests, etc.) use o bundle correto de certificados

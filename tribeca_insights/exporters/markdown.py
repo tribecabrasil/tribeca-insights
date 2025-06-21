@@ -83,7 +83,11 @@ def export_page_to_markdown(
         f.write(f"**Meta Description**: {description}\n\n")
 
         f.write("## Headings\n")
-        f.write("\n".join(f"- {h}" for h in headings) if headings else "_No headings found._")
+        f.write(
+            "\n".join(f"- {h}" for h in headings)
+            if headings
+            else "_No headings found._"
+        )
         f.write("\n\n")
 
         f.write("## Word Frequency (Top 50)\n")
@@ -92,7 +96,11 @@ def export_page_to_markdown(
         f.write("\n")
 
         f.write("## External Links\n")
-        f.write("\n".join(f"- {link}" for link in external) if external else "_No external links found._")
+        f.write(
+            "\n".join(f"- {link}" for link in external)
+            if external
+            else "_No external links found._"
+        )
         f.write("\n\n")
 
         f.write("## Images with ALT\n")
