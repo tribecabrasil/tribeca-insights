@@ -59,3 +59,5 @@ def test_cli_calls_export_pages_json(monkeypatch, tmp_path):
     assert json_file.exists()
     data = json.loads(json_file.read_text())
     assert data["slug"] == "home"
+    log_file = tmp_path / "logs" / "tribeca-insights.log"
+    assert log_file.exists(), "Log file was not created"
