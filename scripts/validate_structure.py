@@ -1,5 +1,15 @@
+"""
+validate_structure.py
+
+Verify that each core module exports exactly the expected functions and constants.
+"""
+
+import logging
+import sys
 import ast
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 # Defina aqui o esperado para cada arquivo
 EXPECTED = {
@@ -8,7 +18,7 @@ EXPECTED = {
     "text_utils.py": ["safe_strip", "clean_and_tokenize", "extract_visible_text"],
     "storage.py": ["load_visited_urls", "save_visited_urls", "reconcile_md_files", "add_urls_from_sitemap"],
     "crawler.py": ["fetch_and_process", "crawl_site"],
-    "exporters/markdown.py": ["export_page_to_markdown", "gerar_indice_markdown"],
+    "exporters/markdown.py": ["export_page_to_markdown", "export_index_markdown"],
     "exporters/csv.py": ["update_keyword_frequency", "export_external_urls"],
     "exporters/json.py": [
         "export_pages_json", "export_index_json",
@@ -16,13 +26,13 @@ EXPECTED = {
     ],
 }
 
-base = Path("seo_crawler")
+base = Path("tribeca_insights")
 errors = False
 
 for rel_path, keys in EXPECTED.items():
     path = base / rel_path
     if not path.exists():
-        print(f"❌ Arquivo não encontrado: {rel_path}")
+        logger.error(f"File not found: {rel_path}")
         errors = True
         continue
 
@@ -40,13 +50,15 @@ for rel_path, keys in EXPECTED.items():
     missing = set(keys) - set(found)
     extra = set(found) - set(keys) - set(["__all__"])
     if missing:
-        print(f"⚠️ Em {rel_path}, faltam: {sorted(missing)}")
+        logger.warning(f"In {rel_path}, missing symbols: {sorted(missing)}")
         errors = True
     if extra:
-        print(f"⚠️ Em {rel_path}, funções/constantes não esperadas: {sorted(extra)}")
+        logger.warning(f"In {rel_path}, unexpected symbols: {sorted(extra)}")
         errors = True
 
 if not errors:
-    print("✅ Todos os módulos contêm exatamente os símbolos esperados.")
+    logger.info("All modules contain exactly the expected symbols.")
 else:
-    print("❌ Ajuste os módulos acima.")
+    logger.error("Please fix the above modules.")
+
+sys.exit(0 if not errors else 1)

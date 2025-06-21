@@ -34,8 +34,10 @@ Tribeca Insights é uma ferramenta modular de análise SEO e extração semânti
 
 ## Uso
 
+Use este comando para iniciar a varredura, especificando o número máximo de páginas, idioma, número de threads e timeout de requisição:
+
 ```bash
-tribeca-insights --max-pages 50 --language en
+tribeca-insights --max-pages 50 --language en --workers 5 --timeout 10
 ```
 
 Opções:
@@ -43,13 +45,19 @@ Opções:
   Número máximo de páginas a rastrear.  
 - `--language {en, pt-br, es, fr, it, de, zh-cn, ja, ru, ar}`  
   Idioma para tokenização e stopwords.  
+- `--workers N`  
+  Número de threads a usar no crawl concorrente.  
+- `--timeout S`  
+  Timeout em segundos para cada requisição HTTP.  
 - `--domain example.com`  
   (Opcional) Força o domínio a ser analisado.
 
 ### Exemplo
 
+Este exemplo executa uma varredura de até 20 páginas em português, usando 4 threads e timeout de 8 segundos:
+
 ```bash
-tribeca-insights --max-pages 20 --language pt-br
+tribeca-insights --max-pages 20 --language pt-br --workers 4 --timeout 8
 ```
 
 Isso criará uma pasta `example-com/` com toda a estrutura de relatórios.

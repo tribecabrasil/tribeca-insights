@@ -4,50 +4,33 @@ CLI entrypoint for Tribeca Insights.
 Orchestrates argument parsing, environment setup, crawling, and export.
 """
 
-import os
-import re
+import argparse
+import json
+import logging
+import time
+from datetime import datetime
+from pathlib import Path
 
-import subprocess
-import sys
-
-required = {
-    "requests": "requests",
-    "bs4": "beautifulsoup4",
-    "nltk": "nltk",
-    "pandas": "pandas",
-    "slugify": "python-slugify"
-}
-
-for module_name, pip_name in required.items():
-    try:
-        __import__(module_name)
-    except ImportError:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", pip_name])
-
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin, urlparse
-from collections import Counter
-import pandas as pd
-import re
-import nltk
-import ssl
-import os
-import glob
-from pathlib import Path
-from datetime import datetime
 from slugify import slugify
+from urllib.parse import urljoin, urlparse
+from urllib.error import URLError
 import xml.etree.ElementTree as ET
+import nltk
 
-import argparse
-import logging
 import concurrent.futures
 import hashlib
-import json
+from collections import Counter
 from typing import List, Set, Tuple
-
-import time
+import ssl
 import urllib.robotparser as robotparser
+import re
+import os
+crawl_delay = 0.0
+
+logger = logging.getLogger(__name__)
 
 crawl_delay = 0.0
 
@@ -69,7 +52,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(mess
 # Função utilitária para remover espaços ou retornar string vazia, com logging para None
 def safe_strip(value):
     if value is None:
-        logging.debug("safe_strip recebeu None")
+        logger.debug("safe_strip recebeu None")
         return ""
     return value.strip() if isinstance(value, str) else ""
 VERSION = "1.0"
@@ -208,7 +191,7 @@ def add_urls_from_sitemap(base_url: str, visited_df: pd.DataFrame) -> pd.DataFra
                 new_df = pd.DataFrame(new_rows)
                 return pd.concat([visited_df, new_df], ignore_index=True)
     except Exception as e:
-        logging.warning(f"⚠️ Erro ao acessar sitemap.xml: {e}")
+        logger.warning(f"Erro ao acessar sitemap.xml: {e}")
     return visited_df
 
 # Exporta o conteúdo de uma página para um arquivo Markdown, incluindo título, descrição, headings, texto, frequência e imagens
@@ -220,7 +203,7 @@ def export_page_to_markdown(folder: Path, url: str, html: str, domain: str, exte
         title_tag = soup.title
         title = safe_strip(title_tag.string) if title_tag else "(sem título)"
     except Exception as e:
-        logging.warning(f"[TITLE ERROR] {url}: {e}")
+        logger.warning(f"[TITLE ERROR] {url}: {e}")
         title = "(erro ao extrair título)"
 
     # Safe extraction of meta description
@@ -229,7 +212,7 @@ def export_page_to_markdown(folder: Path, url: str, html: str, domain: str, exte
         desc_content = desc_tag.get("content") if desc_tag else None
         description = safe_strip(desc_content)
     except Exception as e:
-        logging.warning(f"[META DESCRIPTION ERROR] {url}: {e}")
+        logger.warning(f"[META DESCRIPTION ERROR] {url}: {e}")
         description = "(erro ao extrair descrição)"
 
     headings = [f"{'#' * int(tag.name[1])} {tag.get_text(strip=True)}"
@@ -279,7 +262,7 @@ def fetch_and_process(url: str, domain: str, folder: Path, language: str = "engl
         - page_data (dict with all metrics for JSON export)
     """
     try:
-        logging.info(f"🔗 Visitando: {url}")
+        logger.info(f"Visitando: {url}")
         resp = session.get(url, timeout=10)
         time.sleep(crawl_delay)
         html = resp.text
@@ -298,7 +281,7 @@ def fetch_and_process(url: str, domain: str, folder: Path, language: str = "engl
             title_tag = soup.title
             title = safe_strip(title_tag.string) if title_tag else "(sem título)"
         except Exception as e:
-            logging.warning(f"[TITLE ERROR - FETCH] {url}: {e}")
+            logger.warning(f"[TITLE ERROR - FETCH] {url}: {e}")
             title = "(erro ao extrair título)"
         index_entry = (slug, title)
 
@@ -308,7 +291,7 @@ def fetch_and_process(url: str, domain: str, folder: Path, language: str = "engl
             desc_content = desc_tag.get("content") if desc_tag else None
             description = safe_strip(desc_content)
         except Exception as e:
-            logging.warning(f"[META DESCRIPTION ERROR - FETCH] {url}: {e}")
+            logger.warning(f"[META DESCRIPTION ERROR - FETCH] {url}: {e}")
             description = "(erro ao extrair descrição)"
 
         # Headings
@@ -350,7 +333,7 @@ def fetch_and_process(url: str, domain: str, folder: Path, language: str = "engl
 
         return visible_text, external_links, index_entry, md_filename, page_data
     except Exception as e:
-        logging.warning(f"⚠️ Erro em {url}: {e}")
+        logger.warning(f"Erro em {url}: {e}")
         return "", set(), None, None, None
 
 # Realiza o rastreamento das páginas a partir das URLs pendentes, atualiza status e coleta texto para análise
@@ -382,7 +365,7 @@ def crawl_site(domain: str, base_url: str, folder: Path, visited_df: pd.DataFram
                 if page_data:
                     pages_data.append(page_data)
             except Exception as e:
-                logging.warning(f"⚠️ Erro processando {url}: {e}")
+                logger.warning(f"Erro processando {url}: {e}")
 
     save_visited_urls(visited_df, folder / f"visited_urls_{domain}.csv")
     export_external_urls(folder, external_links)
@@ -403,7 +386,7 @@ def update_keyword_frequency(folder: Path, domain: str, full_text: str, language
 
     df = pd.DataFrame(freq.items(), columns=["Word", "Frequency"]).sort_values(by="Frequency", ascending=False)
     df.to_csv(csv_path, index=False)
-    logging.info(f"📊 Frequência exportada: {csv_path}")
+    logger.info(f"Frequência exportada: {csv_path}")
 
 # Exporta as URLs externas encontradas durante o rastreamento para um arquivo Markdown
 def export_external_urls(folder: Path, external_links: Set[str]) -> None:
@@ -445,7 +428,10 @@ def gerar_indice_markdown(folder: Path) -> None:
 # Função principal que orquestra a execução completa do fluxo de crawling e análise,
 # incluindo setup, carregamento de histórico, rastreamento, análise de palavras e geração de índices.
 def main() -> None:
-    """Main function to run the SEO crawler with CLI arguments and export full JSON."""
+    """
+    Main entrypoint: parse CLI args, set up environment, run crawl workflow,
+    and export Markdown, CSV, and JSON artifacts.
+    """
     setup_environment()
 
     parser = argparse.ArgumentParser()
@@ -455,7 +441,7 @@ def main() -> None:
     parser.add_argument('--delay', type=float, default=None)
     args = parser.parse_args()
 
-    existing_csvs = glob.glob("visited_urls_*.csv")
+    existing_csvs = list(Path.cwd().glob("visited_urls_*.csv"))
     domain, base_url, site_language = ask_for_domain(existing_csvs)
     folder = setup_project_folder(domain)
 
@@ -537,11 +523,12 @@ def main() -> None:
 
     # Verifica se JSON foi criado com sucesso
     if project_json_path.exists():
-        logging.info(f"✅ JSON criado com sucesso em: {project_json_path}")
+        logger.info(f"JSON successfully written to: {project_json_path}")
     else:
-        logging.error(f"❌ Falha ao criar JSON: {project_json_path}")
+        logger.error(f"Failed to write JSON: {project_json_path}")
 
-    logging.info("🏁 Análise concluída.")
+    logger.info("Analysis completed.")
+    return None
 
 if __name__ == "__main__":
     main()

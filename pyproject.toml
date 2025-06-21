@@ -9,7 +9,7 @@ description = "Modular Python CLI for content extraction, term frequency analysi
 readme = "README.md"
 authors = [{ name="Flávio Paulino" }]
 license = { text = "MIT" }
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 dependencies = [
   "requests>=2.28",
   "beautifulsoup4>=4.12",
@@ -19,7 +19,8 @@ dependencies = [
 ]
 classifiers = [
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent"
 ]
@@ -30,6 +31,9 @@ classifiers = [
 
 [project.scripts]
 tribeca-insights = "tribeca_insights.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "pre-commit>=2.20", "mypy>=0.991"]
 
 [tool.setuptools.packages.find]
 where = ["."]
@@ -49,3 +53,9 @@ exclude = ["__pycache__", "build", "dist", ".venv", "scripts"]
 profile = "black"
 combine-as = true
 include-trailing-comma = true
+
+[tool.mypy]
+python_version = "3.10"
+check_untyped_defs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true

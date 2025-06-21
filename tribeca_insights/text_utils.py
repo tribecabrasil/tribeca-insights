@@ -15,6 +15,8 @@ from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 
+MIN_TOKEN_LENGTH: int = 3
+
 _CLEAN_RE = re.compile(r'[^a-zA-Z\s]')
 _SPACE_RE = re.compile(r'\s+')
 
@@ -26,8 +28,9 @@ def _get_stopwords(language: str) -> Set[str]:
     """
     try:
         return set(nltk.corpus.stopwords.words(language))
-    except LookupError:
-        raise ValueError(f"Language '{language}' not supported for stopwords.")
+    except LookupError as e:
+        logger.error(f"Stopwords not found for language '{language}': {e}")
+        raise ValueError(f"Language '{language}' not supported for stopwords.") from e
 
 def safe_strip(value: Optional[str]) -> str:
     """
@@ -35,6 +38,9 @@ def safe_strip(value: Optional[str]) -> str:
 
     :param value: text to be cleaned or None
     :return: text without leading or trailing spaces
+    :Example:
+        safe_strip("  hello ")  # returns "hello"
+        safe_strip(None)         # returns ""
     """
     if value is None:
         logger.debug("safe_strip received None")
@@ -50,6 +56,8 @@ def clean_and_tokenize(text: str, language: str = "english") -> List[str]:
     :param language: language for stopword removal
     :return: list of filtered tokens
     :raises ValueError: if the language is not supported
+    :Example:
+        clean_and_tokenize("Hello, world!", "english")  # returns ["hello", "world"]
     """
     logger.debug(f"Cleaning and tokenizing text of length {len(text)}")
     # Remove non-letter characters
@@ -58,8 +66,8 @@ def clean_and_tokenize(text: str, language: str = "english") -> List[str]:
     text = _SPACE_RE.sub(" ", text)
     tokens = text.lower().split()
     stop_words = _get_stopwords(language)
-    # Filter stopwords and words with less than 3 characters
-    return [word for word in tokens if word not in stop_words and len(word) > 2]
+    # Filter stopwords and words with less than MIN_TOKEN_LENGTH characters
+    return [word for word in tokens if word not in stop_words and len(word) >= MIN_TOKEN_LENGTH]
 
 def extract_visible_text(html: str) -> str:
     """
@@ -67,6 +75,8 @@ def extract_visible_text(html: str) -> str:
 
     :param html: raw HTML content
     :return: concatenated readable text
+    :Example:
+        extract_visible_text("<p>Hello <script>ignore</script>World</p>")  # returns "Hello World"
     """
     soup = BeautifulSoup(html, "html.parser")
     for tag in soup(["script", "style", "svg", "footer", "nav", "meta"]):

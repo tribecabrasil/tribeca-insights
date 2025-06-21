@@ -12,8 +12,12 @@ import pandas as pd
 import xml.etree.ElementTree as ET
 from slugify import slugify
 from urllib.parse import urljoin, urlparse
+from requests.exceptions import RequestException
 
 from tribeca_insights.config import session
+from tribeca_insights.config import HTTP_TIMEOUT
+
+logger = logging.getLogger(__name__)
 
 def load_visited_urls(csv_path: Path) -> pd.DataFrame:
     """Load visited URLs CSV or create empty DataFrame."""
@@ -29,12 +33,13 @@ def save_visited_urls(df: pd.DataFrame, csv_path: Path) -> None:
     """Save visited URLs DataFrame to CSV removing duplicates."""
     df = df.drop_duplicates(subset=['URL'])
     df.to_csv(csv_path, index=False)
+    logger.info(f"Saved {len(df)} visited URLs to {csv_path}")
 
 def add_urls_from_sitemap(base_url: str, visited_df: pd.DataFrame) -> pd.DataFrame:
     """Add URLs from sitemap.xml to visited DataFrame."""
     sitemap_url = urljoin(base_url, '/sitemap.xml')
     try:
-        resp = session.get(sitemap_url, timeout=10)
+        resp = session.get(sitemap_url, timeout=HTTP_TIMEOUT)
         if resp.status_code == 200:
             root = ET.fromstring(resp.content)
             ns = {'ns': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
@@ -46,10 +51,14 @@ def add_urls_from_sitemap(base_url: str, visited_df: pd.DataFrame) -> pd.DataFra
                 if loc not in visited_df['URL'].values:
                     new_rows.append({'URL': loc, 'Status': 2, 'Data': ''})
             if new_rows:
+                logger.info(f"Added {len(new_rows)} new URLs from sitemap")
                 new_df = pd.DataFrame(new_rows)
                 return pd.concat([visited_df, new_df], ignore_index=True)
-    except Exception as e:
-        logging.warning(f'⚠️ Erro ao acessar sitemap.xml: {e}')
+    except ET.ParseError as e:
+        logger.warning(f"Error parsing sitemap XML at {sitemap_url}: {e}")
+        return visited_df
+    except RequestException as e:
+        logger.warning(f'Error accessing sitemap.xml at {sitemap_url}: {e}')
     return visited_df
 
 def reconcile_md_files(visited_df: pd.DataFrame, folder: Path) -> pd.DataFrame:
