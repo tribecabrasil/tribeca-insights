@@ -39,3 +39,4 @@ index.md
 
 # Shell script files
 *.sh
+!install_certs.sh

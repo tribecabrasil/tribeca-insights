@@ -32,6 +32,16 @@ Tribeca Insights é uma ferramenta modular de análise SEO e extração semânti
    python -c "import nltk; nltk.download('stopwords')"
    ```
 
+   **Observação (macOS):** em caso de erro de certificado SSL ao baixar dados, execute:
+   ```bash
+   ./install_certs.sh
+   ```
+   Em seguida, repita:
+   ```bash
+   python -c "import nltk; nltk.download('stopwords')"
+   ```
+
+
 ## Uso
 
 Use este comando para iniciar a varredura, especificando o número máximo de páginas, idioma, número de threads e timeout de requisição:
@@ -186,7 +196,7 @@ In addition to PEP 8 and PEP 257, the following PEPs improve code readability, t
   Native asynchronous programming support, improving clarity in concurrent code.
 
 - **PEP 263 – Source File Encoding**  
-  Declares file encoding (`# coding: utf-8`) to avoid parsing errors with non-ASCII characters.
+  Declares file encoding (`# coding: utf-8`) to avoid parsing errors with non-ASCII caracteres.
 
 - **PEP 20 – The Zen of Python**  
   Principles guiding Pythonic design and readability (`import this`).
