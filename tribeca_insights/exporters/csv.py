@@ -53,7 +53,6 @@ def update_keyword_frequency(
         logger.info(f"Exported {len(df)} keyword frequencies to {csv_path}")
         print(f"[Tribeca Insights] Keyword frequency CSV exported to: {csv_path}")
     except OSError as e:
-          main
         logger.error(f"Failed to write CSV {csv_path}: {e}")
     return None
 
