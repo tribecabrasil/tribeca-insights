@@ -11,7 +11,7 @@ import pandas as pd
 
 from tribeca_insights.config import HTTP_TIMEOUT, SUPPORTED_LANGUAGES, crawl_delay
 from tribeca_insights.crawler import crawl_site
-from tribeca_insights.exporters.json import update_project_json
+from tribeca_insights.exporters.json import export_pages_json, update_project_json
 from tribeca_insights.storage import (
     add_urls_from_sitemap,
     load_visited_urls,
@@ -127,6 +127,7 @@ def main() -> None:
             site_language=language,
             timeout=cmd_args.timeout,
         )
+        export_pages_json(project_folder, pages_data)
         update_project_json(
             project_folder,
             slug,
