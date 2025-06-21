@@ -38,3 +38,13 @@ def test_update_project_json_updates(tmp_path: Path) -> None:
     slugs = {p["slug"] for p in data["pages"]}
     assert {"home", "about"} <= slugs
     assert data["last_updated_at"] != "2020-01-01T00:00:00"
+
+
+def test_update_project_json_fields(tmp_path: Path) -> None:
+    slug = "site"
+    update_project_json(tmp_path, slug, "https://site.com", "en", [], 10, 3, 0.5)
+    data = json.loads((tmp_path / f"project_{slug}.json").read_text())
+    assert data["base_url"] == "https://site.com"
+    assert data["max_pages"] == 10
+    assert data["max_workers"] == 3
+    assert data["crawl_delay"] == 0.5
