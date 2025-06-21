@@ -1,4 +1,3 @@
-import types
 from urllib.error import URLError
 
 import pytest

@@ -12,7 +12,9 @@ import pandas as pd
 from tribeca_insights.config import HTTP_TIMEOUT, SUPPORTED_LANGUAGES
 from tribeca_insights.crawler import crawl_site
 from tribeca_insights.storage import (
+    add_urls_from_sitemap,
     load_visited_urls,
+    reconcile_md_files,
     save_visited_urls,
     setup_project_folder,
 )
@@ -110,6 +112,10 @@ def main() -> None:
                 [{"URL": base_url, "Status": 2, "Data": "", "MD File": ""}]
             )
             save_visited_urls(visited_df, Path.cwd() / f"visited_urls_{slug}.csv")
+
+        visited_df = reconcile_md_files(visited_df, project_folder)
+        visited_df = add_urls_from_sitemap(base_url, visited_df)
+        save_visited_urls(visited_df, Path.cwd() / f"visited_urls_{slug}.csv")
         crawl_site(
             slug,
             base_url,
