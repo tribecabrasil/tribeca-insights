@@ -40,7 +40,53 @@ def main() -> None:
         action="store_true",
         help="Enable debug logging",
     )
-@@ -88,46 +90,50 @@ def main() -> None:
+    # add subcommands
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    # crawl subcommand
+    crawl_parser = subparsers.add_parser("crawl", help="Crawl a site")
+    crawl_parser.add_argument(
+        "--max-pages", type=int, default=50, help="Maximum number of pages to crawl"
+    )
+    crawl_parser.add_argument(
+        "--language",
+        choices=SUPPORTED_LANGUAGES,
+        default="en",
+        help="Language code for stopwords",
+    )
+    crawl_parser.add_argument(
+        "--workers", type=int, default=5, help="Number of worker threads for crawling"
+    )
+    crawl_parser.add_argument(
+        "--timeout",
+        type=int,
+        default=HTTP_TIMEOUT,
+        help="HTTP request timeout in seconds",
+    )
+    crawl_parser.add_argument(
+        "--slug", type=str, required=True, help="Site slug (e.g. 'next-health.com')"
+    )
+    crawl_parser.add_argument(
+        "--base-url",
+        type=str,
+        required=True,
+        help="Base URL to start crawling (e.g. 'https://www.next-health.com')",
+    )
+
+    # export subcommand
+    export_parser = subparsers.add_parser("export", help="Export the latest crawl data")
+    export_parser.add_argument(
+        "--slug", type=str, required=True, help="Site slug identifier for export"
+    )
+    export_parser.add_argument(
+        "--format",
+        choices=["csv", "json", "markdown"],
+        default="csv",
+        help="Export format: csv, json, or markdown",
+    )
+
+    args = parser.parse_args()
+    if args.verbose:
         logging.basicConfig(
             level=logging.DEBUG,
             format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",

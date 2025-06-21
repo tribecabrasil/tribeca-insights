@@ -1,0 +1,28 @@
+# External URLs
+
+- http://newsroom.fb.com/news/2014/11/news-feed-fyi-reducing-overly-promotional-page-posts-in-news-feed/
+- http://searchenginewatch.com/sew/study/2208496/72-of-consumers-want-mobilefriendly-sites-google-research
+- http://t.co/DJUZztnZfM
+- http://www.artsomauto.com.br
+- http://www.entrepreneur.com/article/233843
+- http://www.google.com/analytics/
+- http://www.hubspot.com/internet-marketing-company?__hstc=64741936.5007b895d00a4cdde7de8a6e77d01f20.1440105351922.1440532728924.1440548914993.3&__hssc=64741936.10.1440548914993&__hsfp=4128638975
+- http://www.marketingsherpa.com/exs/LPHExcerpt_9418.pdf
+- http://www.silverpop.com/downloads/white-papers/Silverpop-LandingPageReport-Study.pdf
+- https://about.twitter.com/pt/company
+- https://disqus.com/?ref_noscript
+- https://material.io/guidelines/style/color.html#color-themes
+- https://plus.google.com/101233581034209420952/about
+- https://twitter.com/forrester/status/593372752570101760?ref_src=twsrc%5Etfw
+- https://twitter.com/hashtag/FORRForum?src=hash&ref_src=twsrc%5Etfw
+- https://twitter.com/hashtag/Social?src=hash&ref_src=twsrc%5Etfw
+- https://twitter.com/nate_elliott?ref_src=twsrc%5Etfw
+- https://www.canva.com/pt_br/
+- https://www.digitalocean.com/?refcode=29cc85eee8cd
+- https://www.facebook.com/TribecadigitalBr
+- https://www.google.com/fonts
+- https://www.google.com/webmasters/tools/mobile-friendly/
+- https://www.izideo.com/blog/facebook-kills-organic-reach/
+- https://www.linkedin.com/in/flaviopaulino
+- https://www.linkedin.com/in/flaviopaulino/
+- https://www.wired.com/?p=1718281
