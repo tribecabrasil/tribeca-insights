@@ -51,7 +51,7 @@ def update_keyword_frequency(
     try:
         df.to_csv(csv_path, index=False)
         logger.info(f"Exported {len(df)} keyword frequencies to {csv_path}")
-        print(f"[Tribeca Insights] Keyword frequency CSV exported to: {csv_path}")
+        logger.info(f"Keyword frequency CSV exported to: {csv_path}")
     except Exception as e:
         logger.error(f"Failed to write CSV {csv_path}: {e}")
     return None
