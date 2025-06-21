@@ -1,18 +1,20 @@
-# -*- coding: utf-8 -*-
-# Módulo de exportação JSON para SEO Crawler
+"""
+Export JSON utilities for Tribeca Insights.
 
-import os
-import re
+Provides functions to export page JSON, index JSON, external URLs JSON,
+keyword frequency JSON, and visited URLs JSON.
+"""
+
+import json
 import logging
 from pathlib import Path
 
-import json
 import pandas as pd
 from typing import List, Set, Dict
 
 def export_pages_json(folder: Path, pages_data: List[Dict]) -> None:
     """
-    Para cada dicionário de page_data, grava um JSON em pages_json/<slug>.json.
+    Export each page data as individual JSON files in pages_json/ directory.
     """
     pages_json_dir = folder / "pages_json"
     pages_json_dir.mkdir(exist_ok=True, parents=True)
@@ -21,46 +23,53 @@ def export_pages_json(folder: Path, pages_data: List[Dict]) -> None:
         path = pages_json_dir / f"{slug}.json"
         with open(path, "w", encoding="utf-8") as jf:
             json.dump(p, jf, ensure_ascii=False, indent=2)
+    logging.info(f"Exported pages JSON to: {pages_json_dir}")
 
 def export_index_json(folder: Path, pages_data: List[Dict]) -> None:
     """
-    Gera index.json com lista de {slug, title, md_filename} para cada página.
+    Generate index.json with a list of {slug, title, md_filename} for each page.
     """
     index = [
         {"slug": p["slug"], "title": p.get("title", ""), "md_filename": p.get("md_filename", "")}
         for p in pages_data
     ]
-    with open(folder / "index.json", "w", encoding="utf-8") as f:
+    index_path = folder / "index.json"
+    with open(index_path, "w", encoding="utf-8") as f:
         json.dump(index, f, ensure_ascii=False, indent=2)
+    logging.info(f"Exported index JSON to: {index_path}")
 
 def export_external_urls_json(folder: Path, external_links: Set[str]) -> None:
     """
-    Gera external_urls.json contendo lista de URLs externas.
+    Generate external_urls.json containing a list of external URLs.
     """
     path = folder / "external_urls.json"
     with open(path, "w", encoding="utf-8") as f:
         json.dump(sorted(list(external_links)), f, ensure_ascii=False, indent=2)
+    logging.info(f"Exported external URLs JSON to: {path}")
 
 def export_keyword_frequency_json(folder: Path, domain: str) -> None:
     """
-    Lê keyword_frequency_<domain>.csv e gera keyword_frequency_<domain>.json com {word: freq}.
+    Read keyword_frequency_<domain>.csv and generate keyword_frequency_<domain>.json with {word: freq}.
     """
     csv_path = folder / f"keyword_frequency_{domain}.csv"
     if not csv_path.exists():
-        logging.warning(f"keyword_frequency CSV não encontrado: {csv_path}")
+        logging.warning(f"keyword_frequency CSV not found: {csv_path}")
         return
     df = pd.read_csv(csv_path)
     freq = dict(zip(df['word'], df['freq']))
-    with open(folder / f"keyword_frequency_{domain}.json", "w", encoding="utf-8") as f:
+    json_path = folder / f"keyword_frequency_{domain}.json"
+    with open(json_path, "w", encoding="utf-8") as f:
         json.dump(freq, f, ensure_ascii=False, indent=2)
+    logging.info(f"Exported keyword frequency JSON to: {json_path}")
 
 def export_visited_urls_json(visited_csv: Path) -> None:
     """
-    Gera visited_urls_<domain>.json paralelo ao CSV de visitas.
+    Generate visited_urls_<domain>.json alongside the visited CSV file.
     """
     if not visited_csv.exists():
-        logging.warning(f"visited_urls CSV não encontrado: {visited_csv}")
+        logging.warning(f"visited_urls CSV not found: {visited_csv}")
         return
     df = pd.read_csv(visited_csv)
     json_path = visited_csv.with_suffix('.json')
     df.to_json(json_path, orient="records", force_ascii=False, indent=2)
+    logging.info(f"Exported visited URLs JSON to: {json_path}")

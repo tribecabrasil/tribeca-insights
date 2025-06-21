@@ -1,11 +1,23 @@
-import os
-import re
+"""
+Storage utilities for Tribeca Insights.
+
+Manages the visited URLs log and extracts URLs from sitemaps.
+"""
+
 import logging
 from pathlib import Path
+from typing import List
+
+import pandas as pd
+import xml.etree.ElementTree as ET
+from slugify import slugify
+from urllib.parse import urljoin, urlparse
+
+from tribeca_insights.config import session
 
 def load_visited_urls(csv_path: Path) -> pd.DataFrame:
     """Load visited URLs CSV or create empty DataFrame."""
-    if os.path.exists(csv_path):
+    if csv_path.exists():
         df = pd.read_csv(csv_path)
     else:
         df = pd.DataFrame(columns=['URL', 'Status', 'Data'])
@@ -42,16 +54,19 @@ def add_urls_from_sitemap(base_url: str, visited_df: pd.DataFrame) -> pd.DataFra
 
 def reconcile_md_files(visited_df: pd.DataFrame, folder: Path) -> pd.DataFrame:
     """
-    Para cada URL com Status 1 e MD File vazio, verifica se o arquivo .md existe em pages_md.
-    - Se existir, preenche `MD File` com o nome do arquivo.
-    - Se não existir, redefine Status para 2 para reprocessamento.
+    For each URL with status 1 and an empty MD File field,
+    checks if the corresponding Markdown file exists in pages_md.
+    - If the file exists, fills 'MD File' with the filename.
+    - Otherwise, resets status to 2 for reprocessing.
     """
     for idx, row in visited_df.iterrows():
         if row['Status'] == 1 and (not row['MD File']):
             slug = slugify(urlparse(row['URL']).path or 'home')
             md_path = folder / 'pages_md' / f'{slug}.md'
+            # If the markdown file exists, update 'MD File' with filename
             if md_path.exists():
                 visited_df.at[idx, 'MD File'] = f'{slug}.md'
             else:
+                # If not, reset status to 2 for reprocessing
                 visited_df.at[idx, 'Status'] = 2
     return visited_df

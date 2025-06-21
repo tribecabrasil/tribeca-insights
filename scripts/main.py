@@ -1,20 +1,11 @@
+"""
+CLI entrypoint for Tribeca Insights.
+
+Orchestrates argument parsing, environment setup, crawling, and export.
+"""
+
 import os
 import re
-# Seo Site Analyzer – Crawler Semântico e Exportador de Insights
-#
-# Objetivo: Rastrear sites a partir de uma URL ou histórico existente, extrair conteúdos semânticos (títulos, descrições,
-# headings, textos, imagens com ALT), calcular frequência de palavras e organizar os dados em arquivos markdown e CSV
-# para análise posterior de SEO.
-#
-# Etapas principais:
-# 1. Instala dependências automaticamente (via pip) caso não existam.
-# 2. Solicita domínio base, cria estrutura de diretórios e carrega histórico de análise (se houver).
-# 3. Lê e atualiza o arquivo de visited_urls (paginação e controle incremental).
-# 4. Consulta o sitemap.xml do domínio, extraindo URLs e incluindo-as no CSV de análise.
-# 5. Rastreia páginas internamente (limitadas por max_pages), exporta conteúdo para Markdown, coleta headings e imagens.
-# 6. Calcula a frequência de palavras e exporta para keyword_frequency.csv.
-# 7. Gera um índice markdown com links para todas as páginas analisadas.
-# 8. Exporta um markdown separado com todas as URLs externas detectadas.
 
 import subprocess
 import sys

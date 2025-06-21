@@ -12,15 +12,27 @@ venv/
 .DS_Store
 *.swp
 
+# IDE/project files
+.vscode/
+.idea/
+*.iml
+
 # Build artifacts
 build/
 dist/
 *.egg-info/
 
 # Dados e outputs
+pages_md/
 pages_json/
 next-health-com/
 seo_history.duckdb
+external_urls.md
+index.md
 
 # Logs
 *.log
+
+# Generated output files
+*.json
+*.md

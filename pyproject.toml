@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "tribeca-insights"           # nome público do seu pacote
+name = "tribeca-insights"
 version = "0.1.0"
-description = "Tribeca Insights – Crawler e analisador SEO modular"
+description = "Modular Python CLI for content extraction, term frequency analysis, and SEO reporting"
 readme = "README.md"
 authors = [{ name="Flávio Paulino" }]
 license = { text = "MIT" }
@@ -34,3 +34,18 @@ tribeca-insights = "tribeca_insights.cli:main"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["tribeca_insights*"]
+
+[tool.black]
+line-length = 88
+target-version = ["py38"]
+include = '\.pyi?$'
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503"]
+exclude = ["__pycache__", "build", "dist", ".venv", "scripts"]
+
+[tool.isort]
+profile = "black"
+combine-as = true
+include-trailing-comma = true
