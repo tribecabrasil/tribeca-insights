@@ -29,16 +29,17 @@ Tribeca Insights é uma ferramenta modular de análise SEO e extração semânti
 
 3. Prepare recursos NLTK (stopwords):
    ```bash
-   python -c "import nltk; nltk.download('stopwords')"
+   python3 -c "import nltk; nltk.download('stopwords')"
    ```
 
-   **Observação (macOS):** em caso de erro de certificado SSL ao baixar dados, execute:
+   **Observação (macOS):** se ocorrer erro de certificado SSL ao baixar dados, instale o pacote `certifi` e configure o caminho de certificados:
    ```bash
-   ./install_certs.sh
-   ```
-   Em seguida, repita:
-   ```bash
-   python -c "import nltk; nltk.download('stopwords')"
+   python3 -m pip install --upgrade certifi
+   export SSL_CERT_FILE="$(python3 - <<'PYCODE'
+import certifi; print(certifi.where())
+PYCODE
+   )"
+   python3 -c "import nltk; nltk.download('stopwords')"
    ```
 
 
