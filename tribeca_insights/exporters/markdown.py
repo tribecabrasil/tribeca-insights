@@ -19,7 +19,6 @@ from bs4 import BeautifulSoup
 from slugify import slugify
 
 from tribeca_insights.text_utils import safe_strip, extract_visible_text, clean_and_tokenize
-from tribeca_insights.crawler import get_external_links
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +67,7 @@ def export_page_to_markdown(folder: Path, url: str, html: str, domain: str, exte
         src = img.get('src', '–')
         alt = safe_strip(img.get('alt')) or '_(no ALT)_'
         image_lines.append(f'- `src`: {src}\n  - alt: {alt}')
+    from tribeca_insights.crawler import get_external_links
     external = get_external_links(soup, domain)
     external_links.update(external)
     slug = slugify(urlparse(url).path or 'home')

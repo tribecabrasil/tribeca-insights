@@ -1,81 +1,105 @@
+#!/usr/bin/env python3
 """
-CLI Interface for Tribeca Insights.
-
-Handles user interaction: domain selection (existing or new), URL entry, and site language choice.
+CLI entrypoint for Tribeca Insights.
 """
+import argparse
 import logging
-import re
-import ssl
 from pathlib import Path
-from typing import List, Tuple, NamedTuple
 from urllib.parse import urlparse
-import nltk
-from tribeca_insights.config import SUPPORTED_LANGUAGES
+
+import pandas as pd
+from slugify import slugify
+
+from tribeca_insights.config import SUPPORTED_LANGUAGES, HTTP_TIMEOUT
+from tribeca_insights.storage import load_visited_urls, save_visited_urls
+from tribeca_insights.crawler import crawl_site
+from tribeca_insights.text_utils import setup_environment
 
 logger = logging.getLogger(__name__)
 
-class DomainConfig(NamedTuple):
-    slug: str
-    base_url: str
-    language: str
-
-def setup_environment() -> None:
+def ask_for_domain(existing_csvs: list[Path]) -> tuple[str, str, str]:
     """
-    Configure SSL to accept unverified HTTPS and ensure NLTK stopwords are available.
+    Prompt user to select an existing domain or enter a new URL,
+    then choose the site language.
 
-    :raises AttributeError: if SSL context override is not supported.
+    :param existing_csvs: list of Paths to visited_urls CSV files
+    :return: tuple (slug, base_url, language)
     """
-    try:
-        _create_unverified_https_context = ssl._create_unverified_context
-        ssl._create_default_https_context = _create_unverified_https_context
-    except AttributeError:
-        pass
-    nltk.download('stopwords', quiet=True)
+    # List existing
+    print("\n📁 Domains already analyzed:")
+    for idx, path in enumerate(existing_csvs, start=1):
+        slug = path.stem.replace("visited_urls_", "")
+        print(f"{idx}. {slug}")
+    print(f"{len(existing_csvs)+1}. Enter new URL")
 
-def ask_for_domain(existing_csvs: List[str]) -> DomainConfig:
-    """
-    Prompt the user to select an existing domain or enter a new URL, then choose the site language.
-
-    :param existing_csvs: list of paths to visited_urls CSV files
-    :return: DomainConfig with slug, base_url, and language
-    """
-    valid_csvs = []
-    for f in existing_csvs:
-        basename = Path(f).name
-        m = re.match(r'visited_urls_(.+)\.csv$', basename)
-        if m and m.group(1).strip():
-            valid_csvs.append(f)
-    domain_map = {}
-    print('\n📁 Domains already analyzed:')
-    for idx, file in enumerate(valid_csvs, 1):
-        domain = re.match(r'visited_urls_(.+)\.csv$', Path(file).name).group(1)
-        domain_map[str(idx)] = domain
-        print(f'{idx}. {domain}')
-    print(f'{len(domain_map) + 1}. 🔗 Enter new URL')
-    choice = input('\nChoose an option (number): ').strip()
-    if choice in domain_map:
-        domain = domain_map[choice]
-        base_url = f'https://{domain}'
+    choice = input("\nChoose an option (number): ").strip()
+    if choice.isdigit() and 1 <= int(choice) <= len(existing_csvs):
+        slug = existing_csvs[int(choice)-1].stem.replace("visited_urls_", "")
+        base_url = f"https://{slug}"
     else:
         while True:
-            base_url = input('\n🌐 Enter the new URL (e.g., https://www.tribecadigital.com.br): ').strip()
-            try:
-                parsed = urlparse(base_url)
-                if not parsed.scheme or not parsed.netloc:
-                    raise ValueError(f"Invalid URL entered: {base_url}")
+            base_url = input("Enter the new URL: ").strip()
+            parsed = urlparse(base_url)
+            if parsed.scheme and parsed.netloc:
+                slug = parsed.netloc.replace("www.", "")
                 break
-            except ValueError as e:
-                print(f"❌ {e} Please try again.")
-        domain = parsed.netloc.replace('www.', '')
-    # Prompt for site language by number
-    print("\n🌐 Supported site languages:")
+            print("Invalid URL, please try again.")
+
+    # Language selection
+    print("\nSupported site languages:")
     for idx, lang in enumerate(SUPPORTED_LANGUAGES, start=1):
         print(f"{idx}. {lang}")
-    # Default to English (1)
-    while True:
-        choice = input("Choose language number [1]: ").strip() or "1"
-        if choice.isdigit() and 1 <= int(choice) <= len(SUPPORTED_LANGUAGES):
-            site_language = SUPPORTED_LANGUAGES[int(choice) - 1]
-            break
-        print(f"❌ Invalid choice. Enter a number between 1 and {len(SUPPORTED_LANGUAGES)}.")
-    return DomainConfig(slug=domain, base_url=base_url, language=site_language)
+    choice = input("Choose language number [1]: ").strip() or "1"
+    language = SUPPORTED_LANGUAGES[int(choice)-1]
+
+    return slug, base_url, language
+
+def main() -> None:
+    """
+    Main entrypoint: parse CLI args, set up environment, run crawl and exports.
+    """
+    parser = argparse.ArgumentParser(description="Tribeca Insights CLI")
+    parser.add_argument("--max-pages", type=int, default=50)
+    parser.add_argument("--language", choices=SUPPORTED_LANGUAGES, default="en")
+    parser.add_argument("--workers", type=int, default=5)
+    parser.add_argument("--timeout", type=int, default=HTTP_TIMEOUT)
+    parser.add_argument("--domain", type=str, default=None)
+    args = parser.parse_args()
+
+    setup_environment()
+
+    if args.domain:
+        slug = urlparse(args.domain).netloc.replace("www.", "")
+        base_url = args.domain
+        language = args.language
+    else:
+        existing = list(Path.cwd().glob("visited_urls_*.csv"))
+        slug, base_url, language = ask_for_domain(existing)
+
+    # Load or initialize visited URLs history
+    visited_df = load_visited_urls(Path.cwd(), slug)
+
+    # Seed the home page on first run if no history exists
+    if visited_df.empty:
+        logger.info(f"Seeding initial URL '{base_url}' for crawl queue")
+        visited_df = pd.DataFrame([{
+            'URL': base_url,
+            'Status': 2,
+            'Data': '',
+            'MD File': ''
+        }])
+        # Persist the seeded history
+        save_visited_urls(visited_df, Path.cwd() / f"visited_urls_{slug}.csv")
+
+    text_corpus, pages_data = crawl_site(
+        slug, base_url, Path(slug),
+        visited_df, args.max_pages,
+        args.workers, site_language=language,
+        timeout=args.timeout
+    )
+
+    logger.info("Analysis completed.")
+    return None
+
+if __name__ == "__main__":
+    main()

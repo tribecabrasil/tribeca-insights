@@ -19,14 +19,23 @@ from tribeca_insights.config import HTTP_TIMEOUT
 
 logger = logging.getLogger(__name__)
 
-def load_visited_urls(csv_path: Path) -> pd.DataFrame:
-    """Load visited URLs CSV or create empty DataFrame."""
+def load_visited_urls(base_path: Path, domain: str) -> pd.DataFrame:
+    """
+    Load the visited URLs CSV for the given domain inside base_path.
+    Returns an empty DataFrame if the file does not exist or cannot be read.
+    """
+    csv_name = f"visited_urls_{domain}.csv"
+    csv_path = base_path / csv_name
     if csv_path.exists():
-        df = pd.read_csv(csv_path)
+        try:
+            df = pd.read_csv(csv_path)
+            logger.info(f"Loaded {len(df)} visited URLs from {csv_path}")
+        except Exception as e:
+            logger.warning(f"Could not read visited URLs CSV {csv_path}: {e}")
+            df = pd.DataFrame(columns=['URL', 'Status', 'Data', 'MD File'])
     else:
-        df = pd.DataFrame(columns=['URL', 'Status', 'Data'])
-    if 'MD File' not in df.columns:
-        df['MD File'] = ''
+        logger.info(f"No existing visited URLs file found at {csv_path}, starting fresh.")
+        df = pd.DataFrame(columns=['URL', 'Status', 'Data', 'MD File'])
     return df
 
 def save_visited_urls(df: pd.DataFrame, csv_path: Path) -> None:

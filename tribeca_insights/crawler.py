@@ -20,7 +20,7 @@ from bs4 import BeautifulSoup
 from slugify import slugify
 
 from urllib.parse import urlparse
-from tribeca_insights.config import crawl_delay, session
+from tribeca_insights.config import crawl_delay, session, HTTP_TIMEOUT
 from tribeca_insights.text_utils import safe_strip, extract_visible_text, clean_and_tokenize
 from tribeca_insights.exporters.markdown import export_page_to_markdown
 from tribeca_insights.storage import save_visited_urls
@@ -126,7 +126,16 @@ def fetch_and_process(url: str, domain: str, folder: Path, language: str='englis
         logger.warning(f'Unexpected error processing {url}: {e}')
         return '', set(), ('',''), '', {}
 
-def crawl_site(domain: str, base_url: str, folder: Path, visited_df: pd.DataFrame, max_pages: int, max_workers: int, language: str='english', timeout: int = 10) -> Tuple[str, List[Dict]]:
+def crawl_site(
+    domain: str,
+    base_url: str,
+    folder: Path,
+    visited_df: pd.DataFrame,
+    max_pages: int,
+    max_workers: int = 5,
+    site_language: str = 'english',
+    timeout: int = HTTP_TIMEOUT
+) -> Tuple[str, List[Dict]]:
     """
     Crawl site URLs concurrently and collect results.
 
@@ -136,7 +145,7 @@ def crawl_site(domain: str, base_url: str, folder: Path, visited_df: pd.DataFram
 
     :Example:
         text_corpus, pages_data = crawl_site(
-            'example-com', 'https://example.com', Path('example-com'), visited_df, 100, 5, 'en', timeout=10
+            'example-com', 'https://example.com', Path('example-com'), visited_df, 100, max_workers=5, site_language='en', timeout=HTTP_TIMEOUT
         )
     """
     if crawl_delay > 1.0:
@@ -147,7 +156,7 @@ def crawl_site(domain: str, base_url: str, folder: Path, visited_df: pd.DataFram
     pages_data: List[dict] = []
     failed_urls: List[str] = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        future_to_url = {executor.submit(fetch_and_process, url, domain, folder, language, timeout): url for url in urls_to_visit}
+        future_to_url = {executor.submit(fetch_and_process, url, domain, folder, site_language, timeout): url for url in urls_to_visit}
         for future in tqdm(concurrent.futures.as_completed(future_to_url), total=len(urls_to_visit)):
             url = future_to_url[future]
             try:
@@ -168,6 +177,8 @@ def crawl_site(domain: str, base_url: str, folder: Path, visited_df: pd.DataFram
                 failed_urls.append(url)
     if failed_urls:
         logger.info(f'Failed to process {len(failed_urls)} URLs: {failed_urls}')
+    # Ensure the output directory exists before saving
+    folder.mkdir(parents=True, exist_ok=True)
     save_visited_urls(visited_df, folder / f'visited_urls_{domain}.csv')
     export_external_urls(folder, external_links)
     return (' '.join(text_corpus), pages_data)

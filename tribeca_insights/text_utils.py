@@ -1,87 +1,116 @@
+#!/usr/bin/env python3
 """
-Text utilities for Tribeca Insights.
-
-Provides functions for cleaning, extracting, and tokenizing text content.
+Text utility functions for Tribeca Insights:
+- Cleaning HTML to visible text
+- Tokenizing and filtering via NLTK stopwords
+- Safe string stripping
+- Environment setup (SSL + NLTK)
 """
 
+import os
 import re
+import ssl
 import logging
+from functools import lru_cache
+from typing import List, Set, Optional
 
 import nltk
-from bs4 import BeautifulSoup
+try:
+    import certifi
+except ImportError:
+    certifi = None
 
-from typing import List, Optional, Set
-from functools import lru_cache
+# Map CLI language codes to NLTK stopwords language names
+_LANGUAGE_MAP = {
+    'en': 'english',
+    'pt-br': 'portuguese',
+    'es': 'spanish',
+    'fr': 'french',
+    'it': 'italian',
+    'de': 'german',
+    'zh-cn': 'chinese',
+    'ja': 'japanese',
+    'ru': 'russian',
+    'ar': 'arabic'
+}
 
 logger = logging.getLogger(__name__)
 
-MIN_TOKEN_LENGTH: int = 3
-
-_CLEAN_RE = re.compile(r'[^a-zA-Z\s]')
+MIN_TOKEN_LENGTH = 2
+_CLEAN_RE = re.compile(r'[^A-Za-zÀ-ÿ]+')
 _SPACE_RE = re.compile(r'\s+')
+
+def setup_environment() -> None:
+    """
+    Prepare the environment:
+    - Point SSL at certifi CA bundle if available (fix macOS SSL issues)
+    - Download NLTK stopwords quietly if missing
+    """
+    # Configure SSL to use certifi CA bundle if available
+    if certifi:
+        ca_path = certifi.where()
+        os.environ['SSL_CERT_FILE'] = ca_path
+        logger.info(f"Using certifi CA bundle for SSL: {ca_path}")
+
+    # Ensure stopwords corpus is present
+    try:
+        nltk.download('stopwords', quiet=True)
+        logger.info("NLTK stopwords ensured.")
+    except Exception as e:
+        logger.warning(f"Failed to download NLTK stopwords: {e}")
 
 @lru_cache(maxsize=None)
 def _get_stopwords(language: str) -> Set[str]:
     """
-    Returns the set of stopwords for the language, cached.
-    Raises ValueError if the language is not supported.
+    Return cached set of stopwords for the given CLI language code.
+    Automatically downloads if not already installed.
     """
+    lang_key = _LANGUAGE_MAP.get(language, language)
     try:
-        return set(nltk.corpus.stopwords.words(language))
-    except LookupError as e:
-        logger.error(f"Stopwords not found for language '{language}': {e}")
-        raise ValueError(f"Language '{language}' not supported for stopwords.") from e
+        return set(nltk.corpus.stopwords.words(lang_key))
+    except LookupError:
+        logger.info(f"NLTK stopwords for '{lang_key}' not found. Downloading…")
+        nltk.download('stopwords', quiet=True)
+        return set(nltk.corpus.stopwords.words(lang_key))
 
-def safe_strip(value: Optional[str]) -> str:
+def clean_and_tokenize(text: str, language: str = "en") -> List[str]:
     """
-    Returns the string with leading and trailing spaces removed or an empty string if `value` is None.
+    Strip non-letters, lowercase, split on whitespace, filter out stopwords and short tokens.
 
-    :param value: text to be cleaned or None
-    :return: text without leading or trailing spaces
-    :Example:
-        safe_strip("  hello ")  # returns "hello"
-        safe_strip(None)         # returns ""
+    :param text: raw visible text
+    :param language: CLI code for language (e.g. 'en', 'pt-br')
+    :return: list of tokens
     """
-    if value is None:
-        logger.debug("safe_strip received None")
-        return ""
-    return value.strip() if isinstance(value, str) else ""
+    # Collapse non-letters and normalize spaces
+    cleaned = _CLEAN_RE.sub(" ", text)
+    cleaned = _SPACE_RE.sub(" ", cleaned).strip().lower()
+    tokens = cleaned.split()
 
-def clean_and_tokenize(text: str, language: str = "english") -> List[str]:
-    """
-    Cleans the text by removing non-alphabetic characters, normalizes spaces,
-    tokenizes, removes stopwords and short words.
-
-    :param text: raw string to be processed
-    :param language: language for stopword removal
-    :return: list of filtered tokens
-    :raises ValueError: if the language is not supported
-    :Example:
-        clean_and_tokenize("Hello, world!", "english")  # returns ["hello", "world"]
-    """
-    logger.debug(f"Cleaning and tokenizing text of length {len(text)}")
-    # Remove non-letter characters
-    text = _CLEAN_RE.sub("", text)
-    # Normalize multiple spaces
-    text = _SPACE_RE.sub(" ", text)
-    tokens = text.lower().split()
+    # Filter stopwords and short tokens
     stop_words = _get_stopwords(language)
-    # Filter stopwords and words with less than MIN_TOKEN_LENGTH characters
-    return [word for word in tokens if word not in stop_words and len(word) >= MIN_TOKEN_LENGTH]
+    return [tok for tok in tokens if len(tok) >= MIN_TOKEN_LENGTH and tok not in stop_words]
 
 def extract_visible_text(html: str) -> str:
     """
-    Extracts visible text from HTML, removing scripts, styles, and non-textual tags.
+    Remove scripts, styles, and collapse whitespace to produce clean text.
 
-    :param html: raw HTML content
-    :return: concatenated readable text
-    :Example:
-        extract_visible_text("<p>Hello <script>ignore</script>World</p>")  # returns "Hello World"
+    :param html: raw HTML markup
+    :return: visible text
     """
-    soup = BeautifulSoup(html, "html.parser")
-    for tag in soup(["script", "style", "svg", "footer", "nav", "meta"]):
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(html, 'html.parser')
+    # kill scripts/styles
+    for tag in soup(['script', 'style', 'header', 'footer', 'nav']):
         tag.decompose()
     text = soup.get_text(separator=" ")
-    cleaned = text.strip() if text else ""
-    logger.debug(f"Extracted visible text length: {len(cleaned)}")
-    return cleaned
+    # Collapse multiple whitespace characters
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
+
+def safe_strip(value: Optional[str]) -> str:
+    """
+    Safely strip a string, returning empty string for None or non-str.
+    """
+    if isinstance(value, str):
+        return value.strip()
+    return ""

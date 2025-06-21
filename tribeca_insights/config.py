@@ -12,7 +12,10 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 crawl_delay: float = 0.0
+# Default HTTP request timeout in seconds
+HTTP_TIMEOUT: int = 10
 
 # Supported language codes for stopwords and tokenization
 SUPPORTED_LANGUAGES = [

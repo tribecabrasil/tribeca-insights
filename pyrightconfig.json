@@ -1,0 +1,14 @@
+{
+  "venvPath": "./.venv",
+  "venv": ".venv",
+  "include": ["tribeca_insights", "scripts"],
+  "exclude": ["example-com", "node_modules", ".git", ".github"],
+  "reportMissingTypeStubs": true,
+  "reportMissingImports": true,
+  "reportOptionalMemberAccess": true,
+  "reportOptionalSubscript": true,
+  "reportOptionalOperand": true,
+  "reportTypedDictNotRequiredAccess": true,
+  "pythonVersion": "3.10",
+  "typeCheckingMode": "strict"
+}
