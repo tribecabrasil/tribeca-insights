@@ -41,7 +41,7 @@ make init && make test && make run
 ```
 
 O alvo `make run` executa um crawl de demonstração no domínio
-`example.com`, rastreando até 20 páginas em inglês. Isso garante:
+`tribecadigital.com.br`, rastreando até 20 páginas em inglês. Isso garante:
 - Criação e ativação do ambiente virtual (recomendado)
 - Instalação das dependências
 - Execução de testes
@@ -53,14 +53,14 @@ O alvo `make run` executa um crawl de demonstração no domínio
 
 Inicie uma varredura:
 ```bash
-tribeca-insights crawl example.com --base-url https://example.com --language pt-br --max-pages 50
+tribeca-insights crawl --slug tribecadigital.com.br --base-url https://tribecadigital.com.br --language pt-br --max-pages 50
 ```
 
 Exporte relatórios:
 ```bash
-tribeca-insights export md --domain example.com
-tribeca-insights export csv --domain example.com
-tribeca-insights export json --domain example.com
+tribeca-insights export --slug tribecadigital.com.br --format markdown
+tribeca-insights export --slug tribecadigital.com.br --format csv
+tribeca-insights export --slug tribecadigital.com.br --format json
 ```
 
 ### Ajuda
@@ -70,41 +70,43 @@ tribeca-insights --help
 ```
 
 Opções:
-- `--max-pages N`  
-  Número máximo de páginas a rastrear.  
-- `--language {en, pt-br, es, fr, it, de, zh-cn, ja, ru, ar}`  
-  Idioma para tokenização e stopwords.  
-- `--workers N`  
-  Número de threads a usar no crawl concorrente.  
-- `--timeout S`  
-  Timeout em segundos para cada requisição HTTP.  
-- `--domain example.com`  
-  (Opcional) Força o domínio a ser analisado.
+- `--max-pages N`
+  Número máximo de páginas a rastrear.
+- `--language {en, pt-br, es, fr, it, de, zh-cn, ja, ru, ar}`
+  Idioma para tokenização e stopwords.
+- `--workers N`
+  Número de threads a usar no crawl concorrente.
+- `--timeout S`
+  Timeout em segundos para cada requisição HTTP.
+- `--slug tribecadigital.com.br`
+  Identificador do projeto (obrigatório).
+- `--base-url https://tribecadigital.com.br`
+  URL inicial para rastrear (obrigatória).
 
 ### Exemplo
 
 Este exemplo executa uma varredura de até 20 páginas em português, usando 4 threads e timeout de 8 segundos:
 
 ```bash
-tribeca-insights --max-pages 20 --language pt-br --workers 4 --timeout 8
+tribeca-insights crawl --slug tribecadigital.com.br --base-url https://tribecadigital.com.br --max-pages 20 --language pt-br --workers 4 --timeout 8
 ```
 
-Isso criará uma pasta `example-com/` com toda a estrutura de relatórios.
+Isso criará uma pasta `tribecadigital-com-br/` com toda a estrutura de relatórios.
 
 ### Exemplo de uso via subcomando
 
 Para iniciar uma varredura com subcomando:
 
 ```bash
-tribeca-insights crawl example.com --base-url https://example.com --language pt-br --max-pages 50
+tribeca-insights crawl --slug tribecadigital.com.br --base-url https://tribecadigital.com.br --language pt-br --max-pages 50
 ```
 
 Para exportar relatórios:
 
 ```bash
-tribeca-insights export md --domain example.com
-tribeca-insights export csv --domain example.com
-tribeca-insights export json --domain example.com
+tribeca-insights export --slug tribecadigital.com.br --format markdown
+tribeca-insights export --slug tribecadigital.com.br --format csv
+tribeca-insights export --slug tribecadigital.com.br --format json
 ```
 
 ### Automação com Make
@@ -115,7 +117,7 @@ O fluxo completo pode ser executado com:
 make init && make test && make run
 ```
 
-`make run` executa um crawl padrão em `example.com` com limite de 20
+`make run` executa um crawl padrão em `tribecadigital.com.br` com limite de 20
 páginas em inglês. Isso garante:
 - (Opcional) Criação do ambiente virtual
 - Instalação das dependências
@@ -126,8 +128,8 @@ páginas em inglês. Isso garante:
 
 Tribeca Insights opera em oito etapas principais:
 
-1. **Entrada de parâmetros**  
-   - O usuário executa o comando `tribeca-insights`, passando `--max-pages`, `--language` e opcionalmente `--domain`.  
+1. **Entrada de parâmetros**
+   - O usuário executa `tribeca-insights crawl` informando `--slug`, `--base-url`, `--max-pages` e `--language`.
    - Internamente, o CLI (`tribeca_insights.cli`) valida inputs e configura o ambiente (SSL e recursos NLTK).
 
 2. **Configuração de pasta de projeto**
@@ -135,7 +137,6 @@ Tribeca Insights opera em oito etapas principais:
      - `project_<domain_slug>_template.json` copiado de `docs/examples/project_DOMAIN_template.json`.
      - `pages_md/` para arquivos Markdown.
      - `pages_json/` para JSON de cada página (estrutura igual ao objeto `pages` do JSON do projeto).
-
 3. **Carregamento de histórico**  
    - Usa `load_visited_urls` para ler `visited_urls_<domain>.csv` e identificar URLs já processadas.  
    - Chama `reconcile_md_files` para reprocessar páginas sem `.md`.
@@ -189,7 +190,7 @@ tribeca-insights/
 │       ├ csv.py
 │       ├ json.py
 │       └ markdown.py
-├── example-com/  ← generated outputs
+├── tribecadigital-com-br/  ← generated outputs
 ├── pyproject.toml
 └── README.md
 ```
@@ -276,7 +277,7 @@ To enable strict type-checking and provide rich diagnostics for AI-assisted deve
   "venvPath": "./.venv",
   "venv": ".venv",
   "include": ["tribeca_insights", "scripts"],
-  "exclude": ["example-com", "node_modules", ".git", ".github"],
+  "exclude": ["tribecadigital-com-br", "node_modules", ".git", ".github"],
   "reportMissingTypeStubs": true,
   "reportMissingImports": true,
   "reportOptionalMemberAccess": true,
