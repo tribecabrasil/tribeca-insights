@@ -23,20 +23,19 @@ dist/
 *.egg-info/
 
 # Dados e outputs
-pages_md/
-pages_json/
-seo_history.duckdb
-external_urls.md
-index.md
+
+# Crawl output and history
+*/pages_md/
+*/pages_json/
+visited_urls_*.csv
+*.com/
 
 # Logs
 *.log
 
-# Generated output files
-*.json
-*.md
-!chatgpt_guidelines.md
+# Test and build artifacts
+.pytest_cache/
+*.egg-info/
 
 # Shell script files
 *.sh
-!install_certs.sh
