@@ -36,3 +36,6 @@ index.md
 # Generated output files
 *.json
 *.md
+
+# Shell script files
+*.sh

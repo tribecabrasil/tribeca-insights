@@ -1,8 +1,5 @@
 # Tribeca Insights
 
-## Instalação
-# Tribeca Insights
-
 ## Descrição
 Tribeca Insights é uma ferramenta modular de análise SEO e extração semântica de sites, desenvolvida em Python 3. Permite rastrear páginas, extrair conteúdo relevante (títulos, descrições, headings, imagens), calcular frequência de palavras, identificar links externos e gerar relatórios em Markdown, CSV e JSON.
 
@@ -37,19 +34,20 @@ Tribeca Insights é uma ferramenta modular de análise SEO e extração semânti
 
 ## Uso
 
-### Linha de comando
 ```bash
 tribeca-insights --max-pages 50 --language en
 ```
+
 Opções:
 - `--max-pages N`  
   Número máximo de páginas a rastrear.  
-- `--language {en,pt-br}`  
+- `--language {en, pt-br, es, fr, it, de, zh-cn, ja, ru, ar}`  
   Idioma para tokenização e stopwords.  
 - `--domain example.com`  
   (Opcional) Força o domínio a ser analisado.
 
-### Exemplo de execução
+### Exemplo
+
 ```bash
 tribeca-insights --max-pages 20 --language pt-br
 ```
@@ -58,15 +56,15 @@ Isso criará uma pasta `example-com/` com toda a estrutura de relatórios.
 
 ## Como Funciona
 
-Tribeca Insights opera em sete etapas principais:
+Tribeca Insights opera em oito etapas principais:
 
 1. **Entrada de parâmetros**  
    - O usuário executa o comando `tribeca-insights`, passando `--max-pages`, `--language` e opcionalmente `--domain`.  
    - Internamente, o CLI (`tribeca_insights.cli`) valida inputs e configura o ambiente (SSL e recursos NLTK).
 
 2. **Configuração de pasta de projeto**  
-   - Cria uma pasta `<domain_slug>/` (ex: `example-com/`) com subdiretórios:
-     - `pages_md/` para arquivos Markdown.
+   - Cria uma pasta `<domain_slug>/` (ex: `example-com/`) com subdiretórios:  
+     - `pages_md/` para arquivos Markdown.  
      - `pages_json/` para JSON de cada página.
 
 3. **Carregamento de histórico**  
@@ -74,15 +72,15 @@ Tribeca Insights opera em sete etapas principais:
    - Chama `reconcile_md_files` para reprocessar páginas sem `.md`.
 
 4. **Reconciliação de Markdown**  
-   - Verifica cada entrada com status “visitado” (1) e campo `MD File` vazio.
+   - Verifica cada entrada com status “visitado” (1) e campo `MD File` vazio.  
    - Se o arquivo `.md` existir, preenche o campo; caso contrário, redefine status para 2 (reprocessar).
 
 5. **Crawling & Processamento concorrente**  
    - `crawl_site` busca URLs internas, respeitando `robots.txt` e `crawl-delay`.  
-   - Cada URL é processada por `fetch_and_process`:
+   - Cada URL é processada por `fetch_and_process`:  
      - Faz request HTTP com `requests.Session` e cabeçalho `User-Agent`.  
-     - Analisa HTML via BeautifulSoup, extraindo:
-       - **Título** e **meta description**.
+     - Analisa HTML via BeautifulSoup, extraindo:  
+       - **Título** e **meta description**.  
        - Texto visível (limpo de scripts, estilos e tags não relevantes).  
        - **Headings** (h1–h6) e **imagens** (alt).  
        - **Links externos** e detecção de novos links internos.  
@@ -98,14 +96,13 @@ Tribeca Insights opera em sete etapas principais:
    - Garante consistência entre artefatos Markdown e JSON.
 
 8. **Metadados de projeto**  
-   - Gera `project_<domain_slug>.json` contendo:
+   - Gera `project_<domain_slug>.json` contendo:  
      - URL base, idioma, timestamps (`created_at`, `last_updated_at`).  
      - Configurações do CLI (`max_pages`, `crawl_delay`).  
-     - Lista de `pages_data` com todos os metadados de cada página.  
-
-Todo o fluxo é modular e pode ser integrado como biblioteca ou automação em projetos Django ou pipelines de BI.
+     - Lista de `pages_data` com todos os metadados de cada página.
 
 ## Estrutura de Pastas
+
 ```
 tribeca-insights/
 ├── scripts/
@@ -120,21 +117,10 @@ tribeca-insights/
 │   ├ storage.py
 │   ├ text_utils.py
 │   └ exporters/
-│       ├ __init__.py
 │       ├ csv.py
 │       ├ json.py
 │       └ markdown.py
-├── example-com/
-│   ├ pages_md/
-│   ├ pages_json/
-│   ├ index.md
-│   ├ index.json
-│   ├ external_urls.md
-│   ├ external_urls.json
-│   ├ keyword_frequency_example-com.csv
-│   ├ keyword_frequency_example-com.json
-│   ├ visited_urls_example-com.csv
-│   └ visited_urls_example-com.json
+├── example-com/  ← generated outputs
 ├── pyproject.toml
 └── README.md
 ```
@@ -143,7 +129,6 @@ tribeca-insights/
 
 1. Adicione `tribeca_insights` a `INSTALLED_APPS` em `settings.py`.  
 2. Use `manage.py crawl_site` para executar crawls integrados.
-
 
 ## Code Style (PEP 8)
 
@@ -198,43 +183,63 @@ In addition to PEP 8 and PEP 257, the following PEPs improve code readability, t
 - **PEP 20 – The Zen of Python**  
   Principles guiding Pythonic design and readability (`import this`).
 
+## Pyright Configuration
 
-## Assistência por IA
+To enable strict type-checking and provide rich diagnostics for AI-assisted development, include a `pyrightconfig.json` at the project root with:
 
-> **Observação:** Todo código, modelagem e comentários devem ser escritos 100% em inglês. O README, por enquanto, pode permanecer em Português.
+```json
+{
+  "venvPath": "./.venv",
+  "venv": ".venv",
+  "include": ["tribeca_insights", "scripts"],
+  "exclude": ["example-com", "node_modules", ".git", ".github"],
+  "reportMissingTypeStubs": true,
+  "reportMissingImports": true,
+  "reportOptionalMemberAccess": true,
+  "reportOptionalSubscript": true,
+  "reportOptionalOperand": true,
+  "reportTypedDictNotRequiredAccess": true,
+  "pythonVersion": "3.10",
+  "typeCheckingMode": "strict"
+}
+```
 
-Para facilitar que ferramentas de IA colaborem na evolução do código, recomendamos:
+This ensures:
+- **Strict mode**: all type-checking rules enabled.  
+- **Focused scanning**: only your source folders are analyzed.  
+- **Optional safety**: flags prevent unintended `None` usage.  
+- **Missing-import detection**: catches unresolved or untyped dependencies.  
+- **Modern syntax**: supports Python 3.10 features.
 
-1. **Estrutura de Código Clara**  
-   - Separe responsabilidades em módulos coesos (e.g., `crawler.py`, `exporters/`, `storage.py`, `text_utils.py`).  
-   - Use nomes de funções e variáveis descritivos e consistentes.
+Add this file to version control so contributors and CI pipelines all apply the same strict type checks.
 
-2. **Documentação e Docstrings**  
-   - Inclua docstrings [PEP 257] em todas as funções, explicando parâmetros, retorno e possíveis exceções.  
-   - Atualize o `README.md` com exemplos de uso e esquemas de JSON gerados.
+## AI Collaboration Guidelines
 
-3. **Type Hints e Anotações**  
-   - Adicione tipagem estática em parâmetros e retornos (`typing.List`, `typing.Dict`, `Optional[str]`).  
-   - Permite que IA compreenda contratos de API e sugira autocompleções.
+> **Note:** All code, modeling, comments, and docstrings must be written in **English**. README may remain in Portuguese.
 
-4. **Testes Automatizados**  
-   - Crie testes unitários (`tests/`) para cada módulo com `pytest`.  
-   - Inclua casos de sucesso e falha, mocks de requisições HTTP e validação de JSON/CSV gerados.
+1. **Clear Structure**  
+   - Cohesive modules with descriptive names.
 
-5. **Linting e Formatação**  
-   - Configure `flake8` ou `pylint` para padronizar estilo e detectar erros cedo.  
-   - Use `black` (formatação automática) para manter consistência no layout do código.
+2. **PEP 257 Docstrings**  
+   - One-line summary + detailed description + parameters/returns.
 
-6. **Commits Atômicos e Mensagens Descritivas**  
-   - Cada commit deve implementar uma única alteração ou feature.  
-   - Mensagens com verbo no imperativo e referência ao ticket ou issue quando aplicável.
+3. **Type Hints**  
+   - Use `list[str]`, `dict[str, int]`, etc.
 
-7. **Workflows de CI/CD**  
-   - Configure GitHub Actions para rodar testes, lint e build automaticamente em cada pull request.  
-   - Adicione workflows para publicação automática de pacotes e geração de relatórios de cobertura.
+4. **Automated Tests**  
+   - Pytest with mocks and coverage ≥80%.
 
-8. **Ambientes Isolados**  
-   - Utilize `venv` ou `poetry` para gerenciar dependências.  
-   - Inclua `requirements.txt` ou `poetry.lock` no repositório para controle de versões.
+5. **Lint & Format**  
+   - Black, isort, flake8 in CI.
 
-Seguindo essas diretrizes, ferramentas de IA terão contexto e metadados suficientes para analisar, sugerir melhorias e gerar código de forma rápida e precisa.
+6. **Atomic Commits**  
+   - One logical change per commit.
+
+7. **CI/CD Workflows**  
+   - GitHub Actions for install, lint, test, build, publish.
+
+8. **Isolated Environments**  
+   - venv or poetry; include `requirements.txt` or `poetry.lock`.
+
+
+For ChatGPT-specific guidelines, see [chatgpt_guidelines.md](chatgpt_guidelines.md) in this repository.
