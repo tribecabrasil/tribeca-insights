@@ -137,13 +137,14 @@ Tribeca Insights opera em oito etapas principais:
      - `project_<domain_slug>_template.json` copiado de `docs/examples/project_DOMAIN_template.json`.
      - `pages_md/` para arquivos Markdown.
      - `pages_json/` para JSON de cada página (estrutura igual ao objeto `pages` do JSON do projeto).
+     - `index.md` inicial listando as páginas processadas (atualizado no passo 7).
 3. **Carregamento de histórico**  
-   - Usa `load_visited_urls` para ler `visited_urls_<domain>.csv` e identificar URLs já processadas.  
-   - Chama `reconcile_md_files` para reprocessar páginas sem `.md`.
+   - Usa `load_visited_urls` para ler `visited_urls_<domain>.csv` e identificar URLs já processadas.
+   - Chama `reconcile_md_files` e `reconcile_json_files` para reprocessar páginas sem `.md` ou `.json`.
 
-4. **Reconciliação de Markdown**  
-   - Verifica cada entrada com status “visitado” (1) e campo `MD File` vazio.  
-   - Se o arquivo `.md` existir, preenche o campo; caso contrário, redefine status para 2 (reprocessar).
+4. **Reconciliação de Markdown e JSON**
+   - Verifica cada entrada com status “visitado” (1) e campos `MD File` ou `JSON File` vazios.
+   - Se os arquivos existirem, preenche os campos; caso contrário, redefine status para 2 (reprocessar).
 
 5. **Crawling & Processamento concorrente**  
    - `crawl_site` busca URLs internas, respeitando `robots.txt` e `crawl-delay`.  

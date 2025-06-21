@@ -15,6 +15,7 @@ from tribeca_insights.exporters.json import export_pages_json, update_project_js
 from tribeca_insights.storage import (
     add_urls_from_sitemap,
     load_visited_urls,
+    reconcile_json_files,
     reconcile_md_files,
     save_visited_urls,
     setup_project_folder,
@@ -110,11 +111,20 @@ def main() -> None:
         if visited_df.empty:
             logger.info(f"Seeding initial URL '{base_url}' for crawl queue")
             visited_df = pd.DataFrame(
-                [{"URL": base_url, "Status": 2, "Data": "", "MD File": ""}]
+                [
+                    {
+                        "URL": base_url,
+                        "Status": 2,
+                        "Data": "",
+                        "MD File": "",
+                        "JSON File": "",
+                    }
+                ]
             )
             save_visited_urls(visited_df, Path.cwd() / f"visited_urls_{slug}.csv")
 
         visited_df = reconcile_md_files(visited_df, project_folder)
+        visited_df = reconcile_json_files(visited_df, project_folder)
         visited_df = add_urls_from_sitemap(base_url, visited_df)
         save_visited_urls(visited_df, Path.cwd() / f"visited_urls_{slug}.csv")
         _full_text, pages_data = crawl_site(

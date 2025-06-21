@@ -10,3 +10,4 @@ def test_setup_project_folder_creates_structure(tmp_path: Path) -> None:
     assert (folder / "pages_json").exists()
     template = folder / f"project_{slug}_template.json"
     assert template.exists(), "Project template JSON not created"
+    assert (folder / "index.md").exists(), "Index markdown not created"

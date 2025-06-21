@@ -16,13 +16,14 @@ def test_cli_calls_export_pages_json(monkeypatch, tmp_path):
     monkeypatch.setattr(cli, "crawl_site", lambda *a, **k: ("", pages))
     monkeypatch.setattr(cli, "add_urls_from_sitemap", lambda base_url, df: df)
     monkeypatch.setattr(cli, "reconcile_md_files", lambda df, folder: df)
+    monkeypatch.setattr(cli, "reconcile_json_files", lambda df, folder: df)
     monkeypatch.setattr(cli, "save_visited_urls", lambda df, path: None)
     monkeypatch.setattr(cli, "update_project_json", lambda *a, **k: None)
     monkeypatch.setattr(
         cli,
         "load_visited_urls",
         lambda *_args, **_kw: pd.DataFrame(
-            columns=["URL", "Status", "Data", "MD File"]
+            columns=["URL", "Status", "Data", "MD File", "JSON File"]
         ),
     )
 
