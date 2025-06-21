@@ -6,16 +6,16 @@ Defines crawl delay handling, robots.txt parsing, the USER_AGENT string,
 supported languages, HTTP session setup and SSL workaround for NLTK.
 """
 
-import os
 import logging
+import os
 from urllib import robotparser
 from urllib.error import URLError
 from urllib.parse import urljoin
 
 import certifi
-os.environ.setdefault("SSL_CERT_FILE", certifi.where())
-
 import requests
+
+os.environ.setdefault("SSL_CERT_FILE", certifi.where())
 
 logger = logging.getLogger(__name__)
 
