@@ -46,14 +46,14 @@ def export_page_to_markdown(
     try:
         title_tag = soup.title
         title = safe_strip(title_tag.string) if title_tag else "(no title)"
-    except Exception as e:
+    except (AttributeError, TypeError) as e:
         logger.warning(f"[TITLE ERROR] {url}: {e}")
         title = "(error extracting title)"
     try:
         desc_tag = soup.find("meta", attrs={"name": "description"})
         desc_content = desc_tag.get("content") if desc_tag else None
         description = safe_strip(desc_content)
-    except Exception as e:
+    except (AttributeError, TypeError) as e:
         logger.warning(f"[META DESCRIPTION ERROR] {url}: {e}")
         description = "(error extracting description)"
     headings = [

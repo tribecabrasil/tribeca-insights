@@ -1,5 +1,6 @@
 import time
 
+import pytest
 from bs4 import BeautifulSoup
 
 import tribeca_insights.crawler as crawler
@@ -62,3 +63,22 @@ def test_fetch_and_process(monkeypatch, tmp_path):
     assert ext == {"https://ext.com"}
     assert md == "home.md"
     assert data["title"] == "T"
+
+
+def test_fetch_and_process_error(monkeypatch, tmp_path):
+    class FakeResp:
+        def __init__(self, text: str):
+            self.text = text
+
+    monkeypatch.setattr(
+        crawler.session, "get", lambda url, timeout: FakeResp("<html></html>")
+    )
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+
+    def boom(*_a, **_k) -> None:
+        raise ValueError("fail")
+
+    monkeypatch.setattr(crawler, "export_page_to_markdown", boom)
+
+    with pytest.raises(crawler.PageProcessingError):
+        crawler.fetch_and_process("https://mysite.com", "mysite.com", tmp_path)

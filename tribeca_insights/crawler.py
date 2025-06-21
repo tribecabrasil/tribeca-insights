@@ -36,6 +36,11 @@ from tribeca_insights.text_utils import (
 
 logger = logging.getLogger(__name__)
 
+
+class PageProcessingError(Exception):
+    """Raised when a page fails to process."""
+
+
 # Configure retry policy on the shared session
 retry_strategy = Retry(
     total=3,
@@ -149,9 +154,9 @@ def fetch_and_process(
     except RequestException as e:
         logger.error(f"HTTP error for {url}: {e}")
         return "", set(), ("", ""), "", {}
-    except Exception as e:
-        logger.warning(f"Unexpected error processing {url}: {e}")
-        return "", set(), ("", ""), "", {}
+    except (OSError, AttributeError, ValueError) as e:  # pragma: no cover - unexpected
+        logger.exception(f"Unexpected error processing {url}: {e}")
+        raise PageProcessingError(str(e)) from e
 
 
 def crawl_site(
@@ -215,8 +220,11 @@ def crawl_site(
                     visited_df.loc[visited_df["URL"] == url, "MD File"] = md_filename
                 if page_data:
                     pages_data.append(page_data)
-            except Exception as e:
+            except PageProcessingError as e:
                 logger.warning(f"Error processing {url}: {e}")
+                failed_urls.append(url)
+            except AssertionError as e:
+                logger.error(f"Malformed result for {url}: {e}")
                 failed_urls.append(url)
     if failed_urls:
         logger.info(f"Failed to process {len(failed_urls)} URLs: {failed_urls}")
