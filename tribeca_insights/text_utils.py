@@ -64,7 +64,7 @@ def setup_environment() -> None:
     try:
         nltk.download("stopwords", quiet=True)
         logger.info("NLTK stopwords ensured.")
-    except Exception as e:
+    except (LookupError, OSError) as e:
         logger.warning(f"Failed to download NLTK stopwords: {e}")
 
 
@@ -87,7 +87,7 @@ def _get_stopwords(language: str) -> Set[str]:
         try:
             nltk.download("stopwords", quiet=True)
             return set(nltk.corpus.stopwords.words(lang_key))
-        except Exception as e:  # pragma: no cover - network may be blocked
+        except (LookupError, OSError) as e:  # pragma: no cover - network may be blocked
             logger.warning(f"Failed to download stopwords: {e}")
             return set()
 

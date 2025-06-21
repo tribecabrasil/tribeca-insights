@@ -39,7 +39,7 @@ def setup_project_folder(domain_slug: str, base_path: Path | str = Path.cwd()) -
         try:
             shutil.copyfile(template_src, template_dst)
             logger.info(f"Created template JSON at {template_dst}")
-        except Exception as exc:  # pragma: no cover - log error only
+        except OSError as exc:  # pragma: no cover - log error only
             logger.error(f"Failed to copy template JSON: {exc}")
     return folder
 
@@ -55,7 +55,7 @@ def load_visited_urls(base_path: Path, domain: str) -> pd.DataFrame:
         try:
             df = pd.read_csv(csv_path)
             logger.info(f"Loaded {len(df)} visited URLs from {csv_path}")
-        except Exception as e:
+        except (OSError, pd.errors.ParserError, pd.errors.EmptyDataError) as e:
             logger.warning(f"Could not read visited URLs CSV {csv_path}: {e}")
             df = pd.DataFrame(columns=["URL", "Status", "Data", "MD File", "JSON File"])
     else:

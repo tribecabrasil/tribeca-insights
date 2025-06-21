@@ -1,6 +1,8 @@
 import time
 
+import pytest
 from bs4 import BeautifulSoup
+from requests.exceptions import RequestException
 
 import tribeca_insights.crawler as crawler
 
@@ -62,3 +64,15 @@ def test_fetch_and_process(monkeypatch, tmp_path):
     assert ext == {"https://ext.com"}
     assert md == "home.md"
     assert data["title"] == "T"
+
+
+def test_fetch_and_process_http_error(monkeypatch, tmp_path):
+    class FakeRespExc(RequestException):
+        pass
+
+    def raise_exc(url, timeout):
+        raise FakeRespExc("fail")
+
+    monkeypatch.setattr(crawler.session, "get", raise_exc)
+    with pytest.raises(RequestException):
+        crawler.fetch_and_process("https://mysite.com", "mysite.com", tmp_path)

@@ -9,6 +9,18 @@ def test_load_visited_urls_empty(tmp_path):
     assert list(df.columns) == ["URL", "Status", "Data", "MD File", "JSON File"]
 
 
+def test_load_visited_urls_parse_error(monkeypatch, tmp_path):
+    csv_path = tmp_path / "visited_urls_example.csv"
+    csv_path.write_text("bad,data")
+
+    def bad_read(*_a, **_k):
+        raise pd.errors.ParserError("fail")
+
+    monkeypatch.setattr(pd, "read_csv", bad_read)
+    df = storage.load_visited_urls(tmp_path, "example")
+    assert df.empty
+
+
 def test_save_and_load(tmp_path):
     csv_path = tmp_path / "visited.csv"
     df = pd.DataFrame(

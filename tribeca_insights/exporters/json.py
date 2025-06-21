@@ -31,7 +31,7 @@ def export_pages_json(folder: Path, pages_data: List[Dict]) -> None:
         try:
             with open(path, "w", encoding="utf-8") as jf:
                 json.dump(p, jf, **JSON_DUMP_KWARGS)
-        except Exception as e:
+        except OSError as e:
             logger.error(f"Failed to write page JSON for slug '{slug}': {e}")
     logger.info(f"Exported {len(pages_data)} pages to JSON in {pages_json_dir}")
     return None
@@ -51,7 +51,7 @@ def export_index_json(folder: Path, pages_data: List[Dict]) -> None:
     try:
         with open(index_path, "w", encoding="utf-8") as f:
             json.dump(index, f, **JSON_DUMP_KWARGS)
-    except Exception as e:
+    except OSError as e:
         logger.error(f"Failed to write index JSON to {index_path}: {e}")
     else:
         logger.info(f"Exported index for {len(index)} pages to {index_path}")
@@ -66,7 +66,7 @@ def export_external_urls_json(folder: Path, external_links: Set[str]) -> None:
         try:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump([], f, **JSON_DUMP_KWARGS)
-        except Exception as e:
+        except OSError as e:
             logger.error(f"Failed to write external URLs JSON to {path}: {e}")
         else:
             logger.info("No external URLs to export")
@@ -74,7 +74,7 @@ def export_external_urls_json(folder: Path, external_links: Set[str]) -> None:
     try:
         with open(path, "w", encoding="utf-8") as f:
             json.dump(urls_list, f, **JSON_DUMP_KWARGS)
-    except Exception as e:
+    except OSError as e:
         logger.error(f"Failed to write external URLs JSON to {path}: {e}")
     else:
         logger.info(f"Exported {len(urls_list)} external URLs to {path}")
@@ -92,7 +92,7 @@ def export_keyword_frequency_json(folder: Path, domain: str) -> None:
         freq: Dict[str, int] = dict(zip(df["word"], df["freq"]))
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(freq, f, **JSON_DUMP_KWARGS)
-    except Exception as e:
+    except (OSError, pd.errors.PandasError) as e:
         logger.error(
             f"Failed to export keyword frequency JSON for domain '{domain}': {e}"
         )
@@ -112,7 +112,7 @@ def export_visited_urls_json(visited_csv: Path) -> None:
     try:
         df = pd.read_csv(visited_csv)
         df.to_json(json_path, orient="records", force_ascii=False, indent=2)
-    except Exception as e:
+    except (OSError, pd.errors.PandasError) as e:
         logger.error(f"Failed to export visited URLs JSON for {visited_csv}: {e}")
     else:
         logger.info(
@@ -135,13 +135,13 @@ def export_json(input_dir: str, out_file: str) -> None:
             with open(json_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 combined.append(data)
-        except Exception as e:
+        except (OSError, json.JSONDecodeError) as e:
             logger.error(f"Failed to read {json_file}: {e}")
 
     try:
         with open(out_file, "w", encoding="utf-8") as f:
             json.dump(combined, f, **JSON_DUMP_KWARGS)
-    except Exception as e:
+    except OSError as e:
         logger.error(f"Failed to write combined JSON to {out_file}: {e}")
     else:
         logger.info(f"✅ Exported combined JSON to {out_file}")
@@ -170,7 +170,10 @@ def update_project_json(
         try:
             with open(project_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-        except Exception as e:  # pragma: no cover - log error only
+        except (
+            OSError,
+            json.JSONDecodeError,
+        ) as e:  # pragma: no cover - log error only
             logger.error(f"Failed to read existing project JSON: {e}")
             data = {}
     else:
@@ -206,7 +209,7 @@ def update_project_json(
     try:
         with open(project_path, "w", encoding="utf-8") as f:
             json.dump(data, f, **JSON_DUMP_KWARGS)
-    except Exception as e:  # pragma: no cover - log error only
+    except OSError as e:  # pragma: no cover - log error only
         logger.error(f"Failed to write project JSON {project_path}: {e}")
     else:
         logger.info(f"Updated project JSON at {project_path}")
