@@ -1,0 +1,56 @@
+from pathlib import Path
+
+import pandas as pd
+
+import tribeca_insights.storage as storage
+
+
+def test_load_visited_urls_empty(tmp_path):
+    df = storage.load_visited_urls(tmp_path, "example")
+    assert df.empty
+    assert list(df.columns) == ["URL", "Status", "Data", "MD File"]
+
+
+def test_save_and_load(tmp_path):
+    csv_path = tmp_path / "visited.csv"
+    df = pd.DataFrame(
+        [
+            {"URL": "http://a", "Status": 1, "Data": "", "MD File": ""},
+            {"URL": "http://a", "Status": 2, "Data": "", "MD File": ""},
+        ]
+    )
+    storage.save_visited_urls(df, csv_path)
+    loaded = pd.read_csv(csv_path)
+    assert len(loaded) == 1
+
+
+def test_add_urls_from_sitemap(monkeypatch, tmp_path):
+    xml = (
+        "<?xml version='1.0'?><urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'>"
+        "<url><loc>https://example.com/page</loc></url></urlset>"
+    )
+
+    class FakeResp:
+        status_code = 200
+        content = xml.encode()
+
+    monkeypatch.setattr(storage.session, "get", lambda url, timeout: FakeResp())
+    df = pd.DataFrame([{"URL": "https://example.com", "Status": 2, "Data": ""}])
+    new_df = storage.add_urls_from_sitemap("https://example.com", df)
+    assert "https://example.com/page" in new_df["URL"].values
+
+
+def test_reconcile_md_files(tmp_path):
+    folder = tmp_path
+    pages = folder / "pages_md"
+    pages.mkdir()
+    (pages / "home.md").write_text("hi")
+    df = pd.DataFrame(
+        [
+            {"URL": "https://example.com/home", "Status": 1, "Data": "", "MD File": ""},
+            {"URL": "https://example.com/miss", "Status": 1, "Data": "", "MD File": ""},
+        ]
+    )
+    out = storage.reconcile_md_files(df, folder)
+    assert out.loc[0, "MD File"] == "home.md"
+    assert out.loc[1, "Status"] == 2

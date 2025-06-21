@@ -34,17 +34,18 @@ _LANGUAGE_MAP = {
     "ar": "arabic",
 }
 
-_FALLBACK_STOPWORDS: Dict[str, Set[str]] = {
-    "english": {"the", "this", "and", "of"},
-    "spanish": {"y", "de", "la"},
-    "portuguese": {"e", "de", "a"},
-}
-
 logger = logging.getLogger(__name__)
 
 MIN_TOKEN_LENGTH = 2
 _CLEAN_RE = re.compile(r"[^A-Za-zÀ-ÿ]+")
 _SPACE_RE = re.compile(r"\s+")
+
+# Fallback stopword sets used when NLTK data is unavailable
+FALLBACK_STOPWORDS = {
+    "english": {"the", "a", "and", "of", "is", "this"},
+    "spanish": {"y", "de", "la", "que"},
+    "portuguese": {"e", "de", "que", "o"},
+}
 
 
 def setup_environment() -> None:
@@ -77,17 +78,17 @@ def _get_stopwords(language: str) -> Set[str]:
     try:
         return set(nltk.corpus.stopwords.words(lang_key))
     except LookupError:
-        if lang_key in _FALLBACK_STOPWORDS:
-            logger.info(
-                f"NLTK stopwords for '{lang_key}' not found. Using fallback set."
+        if lang_key in FALLBACK_STOPWORDS:
+            logger.warning(
+                f"Stopwords for '{lang_key}' unavailable; using fallback set"
             )
-            return _FALLBACK_STOPWORDS[lang_key]
+            return FALLBACK_STOPWORDS[lang_key]
         logger.info(f"NLTK stopwords for '{lang_key}' not found. Downloading…")
         try:
             nltk.download("stopwords", quiet=True)
             return set(nltk.corpus.stopwords.words(lang_key))
-        except Exception as exc:  # pragma: no cover - fallback on failure
-            logger.warning(f"Failed to download stopwords: {exc}")
+        except Exception as e:  # pragma: no cover - network may be blocked
+            logger.warning(f"Failed to download stopwords: {e}")
             return set()
 
 
