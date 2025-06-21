@@ -52,7 +52,7 @@ def get_crawl_delay(base_url: str) -> float:
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
 
-# Função utilitária para remover espaços ou retornar string vazia, com logging para None
+# Helper function to strip whitespace or return an empty string, logging when None
 def safe_strip(value):
     if value is None:
         logger.debug("safe_strip recebeu None")
@@ -67,7 +67,7 @@ session = requests.Session()
 session.headers.update({"User-Agent": USER_AGENT})
 
 
-# Configura o ambiente para permitir downloads do NLTK e evita erros SSL em algumas plataformas
+# Configure the environment to allow NLTK downloads and avoid SSL errors on some platforms
 def setup_environment() -> None:
     """Setup SSL context and download NLTK stopwords."""
     try:
@@ -78,8 +78,8 @@ def setup_environment() -> None:
     nltk.download("stopwords", quiet=True)
 
 
-# Limpa e tokeniza o texto, removendo caracteres não alfabéticos, espaços extras e stopwords.
-# Esta função unifica o tratamento de texto para análise de frequência, evitando redundância.
+# Clean and tokenize text by removing non-letter characters, collapsing spaces and stopwords.
+# This helper centralizes text processing for frequency analysis to avoid duplication.
 def clean_and_tokenize(text: str, language: str = "english") -> List[str]:
     """Clean and tokenize text removing stopwords and short words."""
     text = re.sub(r"[^a-zA-Z\s]", "", text)
@@ -89,7 +89,7 @@ def clean_and_tokenize(text: str, language: str = "english") -> List[str]:
     return [word for word in tokens if word not in stop_words and len(word) > 2]
 
 
-# Extrai o texto visível de um HTML, removendo tags que não contribuem para o conteúdo principal
+# Extract visible text from HTML, removing tags that do not contribute to the main content
 def extract_visible_text(html: str) -> str:
     """Extract visible text from HTML excluding non-content tags."""
     soup = BeautifulSoup(html, "html.parser")
@@ -99,7 +99,7 @@ def extract_visible_text(html: str) -> str:
     return text.strip() if text else ""
 
 
-# Obtém todos os links internos pertencentes ao domínio a partir do conteúdo HTML
+# Get all internal links for the domain from the HTML content
 def get_internal_links(soup: BeautifulSoup, base_url: str, domain: str) -> Set[str]:
     """Get internal links from soup belonging to the domain."""
     links = set()
@@ -112,7 +112,7 @@ def get_internal_links(soup: BeautifulSoup, base_url: str, domain: str) -> Set[s
     return links
 
 
-# Obtém todos os links externos que não pertencem ao domínio a partir do conteúdo HTML
+# Get external links from the HTML that do not belong to the domain
 def get_external_links(soup: BeautifulSoup, domain: str) -> Set[str]:
     """Get external links from soup not belonging to the domain."""
     links = set()
@@ -123,7 +123,7 @@ def get_external_links(soup: BeautifulSoup, domain: str) -> Set[str]:
     return links
 
 
-# Carrega o arquivo CSV com URLs visitadas, ou cria um DataFrame vazio se não existir
+# Load the visited URLs CSV file or create an empty DataFrame if it doesn't exist
 def load_visited_urls(csv_path: Path) -> pd.DataFrame:
     """Load visited URLs CSV or create empty DataFrame."""
     if os.path.exists(csv_path):
@@ -135,14 +135,14 @@ def load_visited_urls(csv_path: Path) -> pd.DataFrame:
     return df
 
 
-# Salva o DataFrame de URLs visitadas em CSV, removendo duplicatas para manter integridade
+# Save the visited URLs DataFrame to CSV, removing duplicates to maintain integrity
 def save_visited_urls(df: pd.DataFrame, csv_path: Path) -> None:
     """Save visited URLs DataFrame to CSV removing duplicates."""
     df = df.drop_duplicates(subset=["URL"])
     df.to_csv(csv_path, index=False)
 
 
-# Solicita ao usuário escolher um domínio já analisado ou digitar uma nova URL para iniciar o rastreamento
+# Prompt the user to choose an existing domain or enter a new URL to start crawling
 def ask_for_domain(existing_csvs: List[str]) -> Tuple[str, str]:
     """Ask user to select existing domain or input new URL. Also prompt for site language."""
     # Filter out any CSVs with empty domain (e.g., visited_urls_.csv)
@@ -178,7 +178,7 @@ def ask_for_domain(existing_csvs: List[str]) -> Tuple[str, str]:
     return domain, base_url, site_language
 
 
-# Cria a estrutura de pastas para armazenar os arquivos gerados durante a análise
+# Create the folder structure used to store the analysis artifacts
 def setup_project_folder(domain: str) -> Path:
     """Create project folder and pages_md subfolder."""
     folder = Path(slugify(domain))
@@ -187,7 +187,7 @@ def setup_project_folder(domain: str) -> Path:
     return folder
 
 
-# Consulta o sitemap.xml do domínio para adicionar URLs novas ao DataFrame de URLs visitadas
+# Query the domain's sitemap.xml to add new URLs to the visited DataFrame
 def add_urls_from_sitemap(base_url: str, visited_df: pd.DataFrame) -> pd.DataFrame:
     """Add URLs from sitemap.xml to visited DataFrame."""
     sitemap_url = urljoin(base_url, "/sitemap.xml")
@@ -211,7 +211,7 @@ def add_urls_from_sitemap(base_url: str, visited_df: pd.DataFrame) -> pd.DataFra
     return visited_df
 
 
-# Exporta o conteúdo de uma página para um arquivo Markdown, incluindo título, descrição, headings, texto, frequência e imagens
+# Export page content to a Markdown file including title, description, headings, text, frequency data and images
 def export_page_to_markdown(
     folder: Path, url: str, html: str, domain: str, external_links: Set[str]
 ) -> None:
@@ -296,7 +296,7 @@ def fetch_and_process(
 
         external_links: Set[str] = set()
 
-        # Determina o nome do arquivo Markdown antes de exportar
+        # Determine the Markdown filename before exporting
         slug = slugify(urlparse(url).path or "home")
         md_filename = f"{slug}.md"
 
@@ -365,7 +365,7 @@ def fetch_and_process(
         return "", set(), None, None, None
 
 
-# Realiza o rastreamento das páginas a partir das URLs pendentes, atualiza status e coleta texto para análise
+# Crawl pending URLs, update status, and collect text for analysis
 def crawl_site(
     domain: str,
     base_url: str,
@@ -416,7 +416,7 @@ def crawl_site(
     return " ".join(text_corpus), pages_data
 
 
-# Atualiza e exporta a frequência de palavras para um arquivo CSV, combinando dados anteriores e novos
+# Update and export keyword frequency to a CSV file, merging with any existing data
 def update_keyword_frequency(
     folder: Path, domain: str, full_text: str, language: str = "english"
 ) -> None:
@@ -438,7 +438,7 @@ def update_keyword_frequency(
     logger.info(f"Frequência exportada: {csv_path}")
 
 
-# Exporta as URLs externas encontradas durante o rastreamento para um arquivo Markdown
+# Export the external URLs found during crawling to a Markdown file
 def export_external_urls(folder: Path, external_links: Set[str]) -> None:
     """Export external URLs to markdown file."""
     with open(folder / "external_urls.md", "w", encoding="utf-8") as f:
@@ -447,12 +447,14 @@ def export_external_urls(folder: Path, external_links: Set[str]) -> None:
             f.write(f"- {link}\n")
 
 
-# Reconcilia MD File faltantes para garantir reprocessamento se necessário
+# Reconcile missing MD File entries so pages can be reprocessed if needed
 def reconcile_md_files(visited_df: pd.DataFrame, folder: Path) -> pd.DataFrame:
     """
-    Para cada URL com Status 1 e MD File vazio, verifica se o arquivo .md existe em pages_md.
-    - Se existir, preenche `MD File` com o nome do arquivo.
-    - Se não existir, redefine Status para 2 para reprocessamento.
+    For each URL with status ``1`` and an empty ``MD File`` field, check whether
+    the corresponding ``.md`` file exists in ``pages_md``.
+
+    - If it exists, fill ``MD File`` with the filename.
+    - Otherwise reset ``Status`` to ``2`` so the page will be reprocessed.
     """
     for idx, row in visited_df.iterrows():
         if row["Status"] == 1 and not row["MD File"]:
@@ -465,7 +467,7 @@ def reconcile_md_files(visited_df: pd.DataFrame, folder: Path) -> pd.DataFrame:
     return visited_df
 
 
-# Gera um índice em Markdown com links para todas as páginas analisadas, facilitando navegação
+# Generate a Markdown index with links to all analyzed pages to aid navigation
 def gerar_indice_markdown(folder: Path) -> None:
     """Generate markdown index file with links to analyzed pages."""
     index_path = folder / "index.md"
@@ -478,8 +480,8 @@ def gerar_indice_markdown(folder: Path) -> None:
             f.write(f"- [{title}]({rel_path})\n")
 
 
-# Função principal que orquestra a execução completa do fluxo de crawling e análise,
-# incluindo setup, carregamento de histórico, rastreamento, análise de palavras e geração de índices.
+# Main function orchestrating the full crawling and analysis workflow,
+# including setup, history loading, crawling, keyword analysis and index generation.
 def main() -> None:
     """
     Main entrypoint: parse CLI args, set up environment, run crawl workflow,
@@ -510,7 +512,7 @@ def main() -> None:
 
     visited_csv = folder / f"visited_urls_{domain}.csv"
     visited_df = load_visited_urls(visited_csv)
-    # Reconcilia MD File faltantes para garantir reprocessamento se necessário
+    # Reconcile missing MD File entries to ensure reprocessing when needed
     visited_df = reconcile_md_files(visited_df, folder)
     visited_df = add_urls_from_sitemap(base_url, visited_df)
 
@@ -588,7 +590,7 @@ def main() -> None:
     with open(project_json_path, "w", encoding="utf-8") as f:
         json.dump(project_data, f, ensure_ascii=False, indent=2)
 
-    # Verifica se JSON foi criado com sucesso
+    # Check whether the JSON file was successfully created
     if project_json_path.exists():
         logger.info(f"JSON successfully written to: {project_json_path}")
     else:

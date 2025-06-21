@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Configurações de Crawler para o Tribeca Insights:
-- Define atraso de crawl, parsing de robots.txt, USER_AGENT, idiomas suportados,
-  configuração de sessão HTTP e workaround de SSL para NLTK.
+Crawler configuration for Tribeca Insights.
+
+Defines crawl delay handling, robots.txt parsing, the USER_AGENT string,
+supported languages, HTTP session setup and SSL workaround for NLTK.
 """
 
 import os
@@ -28,10 +29,10 @@ SUPPORTED_LANGUAGES = ["en", "pt-br", "es", "fr", "it", "de", "zh-cn", "ja", "ru
 
 
 def get_crawl_delay(base_url: str) -> float:
-    """Retorna o crawl-delay definido em robots.txt para nosso User-Agent.
+    """Return the crawl-delay defined in robots.txt for our user agent.
 
-    Tenta obter o delay específico para 'tribeca-insights', depois para '*',
-    e enfim devolve o default em caso de ausência ou erro de leitura.
+    Attempts to read the delay for ``tribeca-insights`` first, then ``*``.
+    Falls back to the default value if missing or on read failure.
     """
     parser = robotparser.RobotFileParser()
     parser.set_url(urljoin(base_url, "/robots.txt"))
@@ -50,6 +51,6 @@ VERSION: str = "1.0"
 USER_AGENT: str = f"tribeca-insights/{VERSION}"
 CRAWLED_BY: str = USER_AGENT
 
-# Sessão padrão para todas as requisições HTTP do crawler
+# Default session used for all crawler HTTP requests
 session = requests.Session()
 session.headers.update({"User-Agent": USER_AGENT})
