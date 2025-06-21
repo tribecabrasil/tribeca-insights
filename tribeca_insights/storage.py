@@ -15,6 +15,7 @@ from requests.exceptions import RequestException
 from slugify import slugify
 
 from tribeca_insights.config import HTTP_TIMEOUT, session
+from tribeca_insights.exporters.markdown import export_index_markdown
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,8 @@ def setup_project_folder(domain_slug: str, base_path: Path | str = Path.cwd()) -
     folder.mkdir(parents=True, exist_ok=True)
     (folder / "pages_md").mkdir(parents=True, exist_ok=True)
     (folder / "pages_json").mkdir(parents=True, exist_ok=True)
+    # create an empty index.md for future page references
+    export_index_markdown(folder)
     template_src = (
         Path(__file__).resolve().parent.parent
         / "docs"
@@ -54,12 +57,16 @@ def load_visited_urls(base_path: Path, domain: str) -> pd.DataFrame:
             logger.info(f"Loaded {len(df)} visited URLs from {csv_path}")
         except Exception as e:
             logger.warning(f"Could not read visited URLs CSV {csv_path}: {e}")
-            df = pd.DataFrame(columns=["URL", "Status", "Data", "MD File"])
+            df = pd.DataFrame(columns=["URL", "Status", "Data", "MD File", "JSON File"])
     else:
         logger.info(
             f"No existing visited URLs file found at {csv_path}, starting fresh."
         )
-        df = pd.DataFrame(columns=["URL", "Status", "Data", "MD File"])
+        df = pd.DataFrame(columns=["URL", "Status", "Data", "MD File", "JSON File"])
+    if "MD File" not in df.columns:
+        df["MD File"] = ""
+    if "JSON File" not in df.columns:
+        df["JSON File"] = ""
     return df
 
 
@@ -84,7 +91,15 @@ def add_urls_from_sitemap(base_url: str, visited_df: pd.DataFrame) -> pd.DataFra
                     continue
                 loc = url.text.strip()
                 if loc not in visited_df["URL"].values:
-                    new_rows.append({"URL": loc, "Status": 2, "Data": ""})
+                    new_rows.append(
+                        {
+                            "URL": loc,
+                            "Status": 2,
+                            "Data": "",
+                            "MD File": "",
+                            "JSON File": "",
+                        }
+                    )
             if new_rows:
                 logger.info(f"Added {len(new_rows)} new URLs from sitemap")
                 new_df = pd.DataFrame(new_rows)
@@ -113,5 +128,18 @@ def reconcile_md_files(visited_df: pd.DataFrame, folder: Path) -> pd.DataFrame:
                 visited_df.at[idx, "MD File"] = f"{slug}.md"
             else:
                 # If not, reset status to 2 for reprocessing
+                visited_df.at[idx, "Status"] = 2
+    return visited_df
+
+
+def reconcile_json_files(visited_df: pd.DataFrame, folder: Path) -> pd.DataFrame:
+    """Ensure JSON files exist for visited pages and update log accordingly."""
+    for idx, row in visited_df.iterrows():
+        if row["Status"] == 1 and (not row["JSON File"]):
+            slug = slugify(urlparse(row["URL"]).path or "home")
+            json_path = folder / "pages_json" / f"{slug}.json"
+            if json_path.exists():
+                visited_df.at[idx, "JSON File"] = f"{slug}.json"
+            else:
                 visited_df.at[idx, "Status"] = 2
     return visited_df
