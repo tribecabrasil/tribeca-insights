@@ -11,6 +11,15 @@ import pandas as pd
 
 from tribeca_insights.config import HTTP_TIMEOUT, SUPPORTED_LANGUAGES
 from tribeca_insights.crawler import crawl_site
+from tribeca_insights.exporters.csv import update_keyword_frequency
+from tribeca_insights.exporters.json import (
+    export_external_urls_json,
+    export_index_json,
+    export_keyword_frequency_json,
+    export_pages_json,
+    export_visited_urls_json,
+)
+from tribeca_insights.exporters.markdown import export_index_markdown
 from tribeca_insights.storage import (
     load_visited_urls,
     save_visited_urls,
@@ -110,7 +119,7 @@ def main() -> None:
                 [{"URL": base_url, "Status": 2, "Data": "", "MD File": ""}]
             )
             save_visited_urls(visited_df, Path.cwd() / f"visited_urls_{slug}.csv")
-        crawl_site(
+        full_text, pages_data = crawl_site(
             slug,
             base_url,
             project_folder,
@@ -120,6 +129,17 @@ def main() -> None:
             site_language=language,
             timeout=cmd_args.timeout,
         )
+        update_keyword_frequency(project_folder, slug, full_text, language)
+        export_pages_json(project_folder, pages_data)
+        export_index_json(project_folder, pages_data)
+        export_keyword_frequency_json(project_folder, slug)
+        visited_csv = project_folder / f"visited_urls_{slug}.csv"
+        export_visited_urls_json(visited_csv)
+        external_links = {
+            link for page in pages_data for link in page.get("external_links", [])
+        }
+        export_external_urls_json(project_folder, external_links)
+        export_index_markdown(project_folder)
     elif args.command == "export":
         from tribeca_insights.exporters import export_data  # implement export_data()
 
