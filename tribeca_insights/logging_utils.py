@@ -2,8 +2,10 @@ import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
+DEFAULT_LOG_DIR = Path("logs")
 
-def setup_logging(log_dir: Path) -> None:
+
+def setup_logging(log_dir: Path = DEFAULT_LOG_DIR) -> None:
     """Configure rotating file logging under the given directory."""
     log_dir.mkdir(parents=True, exist_ok=True)
     log_path = log_dir / "tribeca-insights.log"
