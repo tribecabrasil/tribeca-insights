@@ -60,6 +60,18 @@ def test_add_urls_from_sitemap(monkeypatch, tmp_path):
     assert "https://example.com/page" in new_df["URL"].values
 
 
+def test_load_visited_urls_parse_error(monkeypatch, tmp_path):
+    csv = tmp_path / "visited_urls_example.csv"
+    csv.write_text("bad,data")
+
+    def bad_read(*_a, **_k):
+        raise pd.errors.ParserError("boom")
+
+    monkeypatch.setattr(pd, "read_csv", bad_read)
+    df = storage.load_visited_urls(tmp_path, "example")
+    assert df.empty
+
+
 def test_reconcile_md_files(tmp_path):
     folder = tmp_path
     pages = folder / "pages_md"
