@@ -44,8 +44,8 @@ export-json:      ## Export JSON from last crawl
 export-md:        ## Export Markdown from last crawl
 	tribeca-insights export --slug=$(SLUG) --format=markdown
 
-run:              ## Show CLI help
-	tribeca-insights --help
+run:              ## Run default crawl (example.com)
+        tribeca-insights crawl example.com --base-url https://example.com --language en --max-pages 20
 
 clean:            ## Remove generated outputs and caches
 	rm -rf example-com/ __pycache__/ .pytest_cache htmlcov report.csv report.json pages_md
