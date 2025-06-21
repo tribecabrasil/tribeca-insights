@@ -40,7 +40,8 @@ Você pode rodar o fluxo completo com um único comando:
 make init && make test && make run
 ```
 
-Isso garante:
+O alvo `make run` executa um crawl de demonstração no domínio
+`example.com`, rastreando até 20 páginas em inglês. Isso garante:
 - Criação e ativação do ambiente virtual (recomendado)
 - Instalação das dependências
 - Execução de testes
@@ -114,7 +115,8 @@ O fluxo completo pode ser executado com:
 make init && make test && make run
 ```
 
-Isso garante:
+`make run` executa um crawl padrão em `example.com` com limite de 20
+páginas em inglês. Isso garante:
 - (Opcional) Criação do ambiente virtual
 - Instalação das dependências
 - Execução dos testes
