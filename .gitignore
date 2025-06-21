@@ -39,3 +39,7 @@ visited_urls_*.csv
 
 # Shell script files
 *.sh
+
+--- .gitignore
+@@ -1,5 +1,3 @@
+# Local config overrides

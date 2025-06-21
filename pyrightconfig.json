@@ -1,0 +1,14 @@
+{
+  "venvPath": "/Users/flaviopaulino/.virtualenvs",
+  "venv": "",
+  "include": ["tribeca_insights", "scripts", "tests"],
+  "exclude": ["example-com", "node_modules", ".git", ".github"],
+  "reportMissingTypeStubs": false,
+  "reportMissingImports": false,
+  "reportOptionalMemberAccess": true,
+  "reportOptionalSubscript": true,
+  "reportOptionalOperand": true,
+  "reportTypedDictNotRequiredAccess": true,
+  "pythonVersion": "3.13",
+  "typeCheckingMode": "strict"
+}
