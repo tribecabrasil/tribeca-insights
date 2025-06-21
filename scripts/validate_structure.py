@@ -11,7 +11,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# Defina aqui o esperado para cada arquivo
+# Specify the expected symbols for each file
 EXPECTED = {
     "cli.py": ["ask_for_domain", "setup_environment"],
     "config.py": [
@@ -57,7 +57,7 @@ for rel_path, keys in EXPECTED.items():
         if isinstance(node, ast.FunctionDef):
             found.append(node.name)
         elif isinstance(node, ast.Assign):
-            # captura constantes simples
+            # capture simple constant assignments
             for target in node.targets:
                 if isinstance(target, ast.Name):
                     found.append(target.id)
