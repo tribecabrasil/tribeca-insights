@@ -1,0 +1,28 @@
+# Byte‐compiled / cache
+__pycache__/
+*.py[cod]
+
+# Environments
+.env
+.venv/
+venv/
+
+# Editor temp files
+.DS_Store
+*.swp
+
+# Build artifacts
+*.egg-info/
+build/
+dist/
+
+# Data outputs
+pages_json/
+next-health-com/
+seo_history.duckdb
+
+# Logs
+*.log
+
+# JSON gerados (se você preferir não versionar)
+*.json

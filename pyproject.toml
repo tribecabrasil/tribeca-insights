@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tribeca-insights"           # nome público do seu pacote
+version = "0.1.0"
+description = "Tribeca Insights – Crawler e analisador SEO modular"
+readme = "README.md"
+authors = [{ name="Flávio Paulino" }]
+license = { text = "MIT" }
+requires-python = ">=3.8"
+dependencies = [
+  "requests>=2.28",
+  "beautifulsoup4>=4.12",
+  "pandas>=2.0",
+  "python-slugify>=8.0",
+  "nltk>=3.7"
+]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent"
+]
+
+[project.urls]
+"Homepage"   = "https://github.com/tribecabrasil/tribeca-insights"
+"Repository" = "https://github.com/tribecabrasil/tribeca-insights.git"
+
+[project.scripts]
+tribeca-insights = "tribeca_insights.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["tribeca_insights*"]
