@@ -5,6 +5,7 @@ import pytest
 from bs4 import BeautifulSoup
 
 import tribeca_insights.crawler as crawler
+from tribeca_insights.exporters import markdown
 
 
 def test_get_external_links():
@@ -64,6 +65,31 @@ def test_fetch_and_process(monkeypatch, tmp_path):
     assert ext == {"https://ext.com"}
     assert md == "home.md"
     assert data["title"] == "T"
+
+
+def test_fetch_and_process_playwright_subdir(monkeypatch, tmp_path):
+    html = "<html><head><title>T</title></head><body></body></html>"
+
+    class FakeResp:
+        def __init__(self, text: str):
+            self.text = text
+
+    monkeypatch.setattr(crawler.session, "get", lambda url, timeout: FakeResp(html))
+    called = {}
+
+    def capture(*args, **kwargs):
+        called["subdir"] = kwargs.get("subdirectory")
+
+    monkeypatch.setattr(crawler, "export_page_to_markdown", capture)
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+
+    crawler.fetch_and_process(
+        "https://mysite.com",
+        "mysite.com",
+        tmp_path,
+        fetch_fn=lambda u, t: html,
+    )
+    assert called["subdir"] == markdown.MD_PAGES_PLAYWRIGHT_DIR
 
 
 def test_fetch_and_process_error(monkeypatch, tmp_path):
