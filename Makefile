@@ -33,7 +33,7 @@ typecheck: ## Run static type checks
 	pyright
 
 crawl: ## Run crawl with SLUG and BASE_URL (e.g. make crawl SLUG=example.com BASE_URL=https://example.com)
-	tribeca-insights crawl --slug=$(SLUG) --base-url=$(BASE_URL) --max-pages=20 --language=en
+        tribeca-insights crawl --slug=$(SLUG) --base-url=$(BASE_URL) --max-pages=20 --language=en $(if $(PLAYWRIGHT),--playwright,)
 
 export-csv: ## Export CSV from last crawl
 	tribeca-insights export --slug=$(SLUG) --format=csv

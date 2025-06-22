@@ -75,6 +75,11 @@ def main() -> None:
         required=True,
         help="Base URL to start crawling (e.g. 'https://www.next-health.com')",
     )
+    crawl_parser.add_argument(
+        "--playwright",
+        action="store_true",
+        help="Fetch pages using Playwright",
+    )
 
     # export subcommand
     export_parser = subparsers.add_parser("export", help="Export the latest crawl data")
@@ -139,6 +144,7 @@ def main() -> None:
             cmd_args.workers,
             site_language=language,
             timeout=cmd_args.timeout,
+            use_playwright=cmd_args.playwright,
         )
         export_pages_json(project_folder, pages_data)
         update_project_json(
