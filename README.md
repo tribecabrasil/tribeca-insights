@@ -90,6 +90,7 @@ Opções:
   URL inicial para rastrear (obrigatória).
 - `--playwright`
   Renderiza páginas com Playwright ([docs/playwright.md](docs/playwright.md)).
+Esta opcao e recomendada para sites que dependem de JavaScript para exibir conteudo.
 
 ### Exemplo
 
