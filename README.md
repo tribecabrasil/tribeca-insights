@@ -88,6 +88,8 @@ Opções:
   Identificador do projeto (obrigatório).
 - `--base-url https://tribecadigital.com.br`
   URL inicial para rastrear (obrigatória).
+- `--playwright`
+  Renderiza páginas com Playwright ([docs/playwright.md](docs/playwright.md)).
 
 ### Exemplo
 
