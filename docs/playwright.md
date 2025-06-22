@@ -4,7 +4,8 @@ This project can optionally render pages using Playwright for sites that rely he
 
 ## Installation
 
-Install the package and browser drivers:
+`make init` installs both the Playwright package and browser drivers automatically.
+If you prefer manual setup, run:
 
 ```bash
 pip install playwright

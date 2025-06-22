@@ -32,6 +32,8 @@ Tribeca Insights é uma ferramenta modular de análise SEO e extração semânti
    ```bash
    make init
    ```
+   Esse comando instala todas as dependências do projeto e o Playwright
+   (incluindo os navegadores necessários) de forma automática.
 
 ## Automação
 
@@ -44,6 +46,7 @@ O alvo `make run` executa um crawl de demonstração no domínio
 `tribecadigital.com.br`, rastreando até 20 páginas em inglês. Isso garante:
 - Criação e ativação do ambiente virtual (recomendado)
 - Instalação das dependências
+- Instalação automática do Playwright (navegadores incluídos)
 - Execução de testes
 - Execução de uma varredura padrão
 

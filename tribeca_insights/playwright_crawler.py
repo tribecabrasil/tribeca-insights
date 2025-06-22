@@ -17,11 +17,15 @@ def fetch_with_playwright(url: str, timeout: int) -> str:
         The page HTML after rendering dynamic content, or an empty string on
         failure.
     """
-    from playwright.sync_api import Error as PlaywrightError
-    from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
-    from playwright.sync_api import (
-        sync_playwright,
-    )
+    try:
+        from playwright.sync_api import Error as PlaywrightError
+        from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+        from playwright.sync_api import sync_playwright
+    except ModuleNotFoundError as exc:  # pragma: no cover - import guard
+        logger.error(
+            "Playwright not installed. Run 'pip install playwright' and 'playwright install'."
+        )
+        raise exc
 
     html: Optional[str] = None
     with sync_playwright() as p:
