@@ -59,7 +59,7 @@ pytest tests/test_module.py # Run specific tests
 pytest --cov=tribeca_insights tests/ # Run with coverage
 ```
 
-Maintain test coverage ≥80%.
+Maintain test coverage ≥90%.
 
 ## Pull Request (PR) Standards
 

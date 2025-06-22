@@ -326,8 +326,8 @@ Add this file to version control so contributors and CI pipelines all apply the 
 3. **Type Hints**  
    - Use `list[str]`, `dict[str, int]`, etc.
 
-4. **Automated Tests**  
-   - Pytest with mocks and coverage ≥80%.
+4. **Automated Tests**
+   - Pytest with mocks and coverage ≥90%.
 
 5. **Lint & Format**  
    - Black, isort, flake8 in CI.

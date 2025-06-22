@@ -108,7 +108,7 @@ flake8
 1. **Clear Structure**: cohesive modules with descriptive names.
 2. **PEP 257 Docstrings**: one-line summary + detailed description + parameters/returns.
 3. **Type Hints**: use `list[str]`, `dict[str, int]`, etc.
-4. **Automated Tests**: pytest with mocks and coverage ≥80%.
+4. **Automated Tests**: pytest with mocks and coverage ≥90%.
 5. **Lint & Format**: Black, isort, flake8 in CI.
 6. **Atomic Commits**: one logical change per commit.
 7. **CI/CD Workflows**: GitHub Actions for install, lint, test, build, publish.
