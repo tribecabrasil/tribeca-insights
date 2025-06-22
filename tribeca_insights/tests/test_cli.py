@@ -13,7 +13,7 @@ def test_cli_calls_export_pages_json(monkeypatch, tmp_path):
 
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(cli, "setup_environment", lambda: None)
-    monkeypatch.setattr(cli, "crawl_site", lambda *a, **k: ("", pages))
+    monkeypatch.setattr(cli, "crawl_site", lambda *a, **k: ("", pages, "BeautifulSoup"))
     monkeypatch.setattr(cli, "add_urls_from_sitemap", lambda base_url, df: df)
     monkeypatch.setattr(cli, "reconcile_md_files", lambda df, folder: df)
     monkeypatch.setattr(cli, "reconcile_json_files", lambda df, folder: df)
@@ -71,7 +71,7 @@ def test_cli_playwright_flag(monkeypatch, tmp_path):
 
     def crawl(*a, **k):
         called["playwright"] = k.get("use_playwright")
-        return "", []
+        return "", [], "Playwright"
 
     monkeypatch.setattr(cli, "crawl_site", crawl)
     monkeypatch.setattr(cli, "add_urls_from_sitemap", lambda base_url, df: df)

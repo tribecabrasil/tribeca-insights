@@ -135,7 +135,7 @@ def main() -> None:
         visited_df = reconcile_json_files(visited_df, project_folder)
         visited_df = add_urls_from_sitemap(base_url, visited_df)
         save_visited_urls(visited_df, Path.cwd() / f"visited_urls_{slug}.csv")
-        _full_text, pages_data = crawl_site(
+        _full_text, pages_data, crawler_engine = crawl_site(
             slug,
             base_url,
             project_folder,
@@ -156,6 +156,7 @@ def main() -> None:
             cmd_args.max_pages,
             cmd_args.workers,
             crawl_delay,
+            crawler_engine=crawler_engine,
         )
     elif args.command == "export":
         from tribeca_insights.exporters import export_data  # implement export_data()

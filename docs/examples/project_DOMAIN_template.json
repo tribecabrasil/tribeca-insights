@@ -1,6 +1,7 @@
 {
   "version": "",
   "crawled_by": "",
+  "crawler_engine": "BeautifulSoup",
   "project_slug": "",
   "domain": "",
   "base_url": "",

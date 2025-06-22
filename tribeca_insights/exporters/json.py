@@ -156,8 +156,21 @@ def update_project_json(
     max_pages: int,
     workers: int,
     crawl_delay: float,
+    crawler_engine: str = "BeautifulSoup",
 ) -> None:
-    """Create or update the consolidated project metadata JSON."""
+    """Create or update the consolidated project metadata JSON.
+
+    Args:
+        folder: Output folder for the project JSON.
+        slug: Project slug.
+        base_url: Base URL for crawling.
+        language: Site language.
+        pages_data: List of page metadata dictionaries.
+        max_pages: Maximum number of pages crawled.
+        workers: Thread worker count.
+        crawl_delay: Delay between HTTP requests.
+        crawler_engine: Engine used for crawling.
+    """
 
     from datetime import datetime
 
@@ -191,6 +204,7 @@ def update_project_json(
         {
             "version": VERSION,
             "crawled_by": CRAWLED_BY,
+            "crawler_engine": crawler_engine,
             "project_slug": slug,
             "domain": slug,
             "base_url": base_url,
