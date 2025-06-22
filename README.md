@@ -32,6 +32,7 @@ Tribeca Insights é uma ferramenta modular de análise SEO e extração semânti
    ```bash
    make init
    ```
+   O comando instala automaticamente o Playwright e os navegadores necessários.
 
 ## Automação
 

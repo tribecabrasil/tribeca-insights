@@ -41,6 +41,9 @@ dev = [
   "black>=23.9",
   "isort>=5.0"
 ]
+playwright = [
+  "playwright>=1.40"
+]
 
 [project.entry-points.console_scripts]
 tribeca-insights = "tribeca_insights.cli:main"
