@@ -23,7 +23,15 @@ def test_cli_calls_export_pages_json(monkeypatch, tmp_path):
         cli,
         "load_visited_urls",
         lambda *_args, **_kw: pd.DataFrame(
-            columns=["URL", "Status", "Data", "MD File", "JSON File"]
+            columns=pd.Index(
+                [
+                    "URL",
+                    "Status",
+                    "Data",
+                    "MD File",
+                    "JSON File",
+                ]
+            )
         ),
     )
 
@@ -83,7 +91,15 @@ def test_cli_playwright_flag(monkeypatch, tmp_path):
         cli,
         "load_visited_urls",
         lambda *_args, **_kw: pd.DataFrame(
-            columns=["URL", "Status", "Data", "MD File", "JSON File"]
+            columns=pd.Index(
+                [
+                    "URL",
+                    "Status",
+                    "Data",
+                    "MD File",
+                    "JSON File",
+                ]
+            )
         ),
     )
     original_setup = cli.setup_project_folder
