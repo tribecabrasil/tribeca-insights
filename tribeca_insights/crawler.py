@@ -136,6 +136,9 @@ def fetch_and_process(
         else:
             resp = session.get(url, timeout=timeout)
             html = resp.text
+        if not html:
+            logger.error(f"No HTML returned for {url}")
+            return "", set(), ("", ""), "", {}
         time.sleep(crawl_delay)
         soup = BeautifulSoup(html, "html.parser")
         external_links: Set[str] = set()
