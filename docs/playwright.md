@@ -31,22 +31,22 @@ Pass `PLAYWRIGHT=1` to the `crawl` target:
 make crawl SLUG=example.com BASE_URL=https://example.com PLAYWRIGHT=1
 ```
 
-## Output Files
+## Output Directory
 
-Pages renderizadas com Playwright são salvas na pasta
-`pages_md_playwright/`. O índice é gerado a partir dessa pasta e da
-`pages_md/` tradicional.
+Pages rendered by Playwright are stored in `pages_md_playwright/` within
+your project folder. This supplements the standard `pages_md/` directory
+used for pages fetched without a browser.
 
 ## Project JSON
 
-Quando Playwright é utilizado, a função `update_project_json` grava o campo
-`"crawler_engine": "Playwright"` no arquivo `project_<slug>.json`.
-
-Exemplo:
+The helper `update_project_json` tracks the crawler engine. When Playwright
+is used, it writes `"crawler_engine": "Playwright"` to
+`project_<slug>.json`:
 
 ```json
 {
-  "crawler_engine": "Playwright",
-  "pages_count": 10
+  "project_slug": "example-com",
+  "crawled_by": "Tribeca Insights",
+  "crawler_engine": "Playwright"
 }
 ```

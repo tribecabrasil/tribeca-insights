@@ -90,8 +90,7 @@ Opções:
   URL inicial para rastrear (obrigatória).
 - `--playwright`
   Renderiza páginas com Playwright ([docs/playwright.md](docs/playwright.md)).
-  Os arquivos Markdown gerados ficam em `pages_md_playwright/` e o
-  `update_project_json` registra `"crawler_engine": "Playwright"`.
+Esta opcao e recomendada para sites que dependem de JavaScript para exibir conteudo.
 
 ### Exemplo
 
@@ -168,7 +167,8 @@ Tribeca Insights opera em oito etapas principais:
        - Texto visível (limpo de scripts, estilos e tags não relevantes).  
        - **Headings** (h1–h6) e **imagens** (alt).  
        - **Links externos** e detecção de novos links internos.  
-     - Gera arquivo Markdown em `pages_md/<slug>.md`.
+      - Gera arquivo Markdown em `pages_md/<slug>.md`.
+      - Quando o Playwright é usado, o Markdown é salvo em `pages_md_playwright/<slug>.md`.
 
 6. **Exportação de dados**  
    - Atualiza frequência de palavras em CSV com `update_keyword_frequency`.  
@@ -179,11 +179,12 @@ Tribeca Insights opera em oito etapas principais:
    - Cria `index.md` e `index.json` listando todos os slugs e títulos de páginas.  
    - Garante consistência entre artefatos Markdown e JSON.
 
-8. **Metadados de projeto**  
-   - Gera `project_<domain_slug>.json` contendo:  
-     - URL base, idioma, timestamps (`created_at`, `last_updated_at`).  
-     - Configurações do CLI (`max_pages`, `crawl_delay`).  
-     - Lista de `pages_data` com todos os metadados de cada página.
+  8. **Metadados de projeto**
+     - Gera `project_<domain_slug>.json` contendo:
+       - URL base, idioma, timestamps (`created_at`, `last_updated_at`).
+       - Configurações do CLI (`max_pages`, `crawl_delay`).
+       - Lista de `pages_data` com todos os metadados de cada página.
+       - Quando o Playwright é utilizado, inclui `"crawler_engine": "Playwright"`.
 
 ## Estrutura de Pastas
 
