@@ -9,10 +9,12 @@ venv-check: ## Check if virtual environment is activated
 	fi
 
 install: venv-check ## Install Python dependencies and NLTK resources
-	@pip install --upgrade pip
-	@pip install -e .
-	@pip install certifi
-	@python -c "import os, certifi; os.environ.setdefault('SSL_CERT_FILE', certifi.where()); import nltk; nltk.download('stopwords')"
+@pip install --upgrade pip
+@pip install -e .
+@pip install certifi
+@pip install playwright
+@playwright install
+@python -c "import os, certifi; os.environ.setdefault('SSL_CERT_FILE', certifi.where()); import nltk; nltk.download('stopwords')"
 
 init: install ## Bootstrap project (recommended before first run)
 

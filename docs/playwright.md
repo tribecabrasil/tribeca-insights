@@ -11,6 +11,8 @@ pip install playwright
 playwright install
 ```
 
+Running `make init` installs Playwright and downloads the browser binaries automatically.
+
 Run `playwright install` once to download the required browser binaries.
 
 ## When It Runs
