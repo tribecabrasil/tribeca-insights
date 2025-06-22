@@ -27,11 +27,17 @@ from tribeca_insights.text_utils import (
 logger = logging.getLogger(__name__)
 
 MD_PAGES_DIR = "pages_md"
+MD_PAGES_PLAYWRIGHT_DIR = "pages_md_playwright"
 INDEX_FILENAME = "index.md"
 
 
 def export_page_to_markdown(
-    folder: Path, url: str, html: str, domain: str, external_links: Set[str]
+    folder: Path,
+    url: str,
+    html: str,
+    domain: str,
+    external_links: Set[str],
+    subdirectory: str = MD_PAGES_DIR,
 ) -> None:
     """
     Export page content to a Markdown file.
@@ -41,6 +47,7 @@ def export_page_to_markdown(
     :param html: raw HTML content
     :param domain: domain slug for URL parsing
     :param external_links: set to collect external links
+    :param subdirectory: relative subfolder for Markdown pages
     """
     soup = BeautifulSoup(html, "html.parser")
     try:
@@ -74,7 +81,7 @@ def export_page_to_markdown(
     external = get_external_links(soup, domain)
     external_links.update(external)
     slug = slugify(urlparse(url).path or "home")
-    pages_dir = folder / MD_PAGES_DIR
+    pages_dir = folder / subdirectory
     pages_dir.mkdir(parents=True, exist_ok=True)
     filepath = pages_dir / f"{slug}.md"
     with open(filepath, "w", encoding="utf-8") as f:
@@ -121,15 +128,22 @@ def export_page_to_markdown(
     return None
 
 
-def export_index_markdown(folder: Path) -> None:
+def export_index_markdown(
+    folder: Path, subdirectories: list[str] | None = None
+) -> None:
     """Generate Markdown index of analyzed pages.
 
-    :param folder: base project folder containing pages_md directory
+    :param folder: base project folder containing Markdown directories
+    :param subdirectories: list of subfolders to index
     """
-    pages_dir = folder / MD_PAGES_DIR
+    if subdirectories is None:
+        subdirectories = [MD_PAGES_DIR]
     index_path = folder / INDEX_FILENAME
-    pages_dir.mkdir(parents=True, exist_ok=True)
-    pages = sorted(pages_dir.glob("*.md"))
+    pages: list[Path] = []
+    for sub in subdirectories:
+        pages_dir = folder / sub
+        pages_dir.mkdir(parents=True, exist_ok=True)
+        pages.extend(sorted(pages_dir.glob("*.md")))
     with open(index_path, "w", encoding="utf-8") as f:
         f.write("# Analyzed Pages Index\n\n")
         for page in pages:
@@ -150,7 +164,7 @@ def export_markdown(input_dir: Path | str, out_dir: Path | str) -> None:
     """
     input_dir = Path(input_dir)
     out_dir = Path(out_dir)
-    export_index_markdown(out_dir)
+    export_index_markdown(out_dir, [MD_PAGES_DIR, MD_PAGES_PLAYWRIGHT_DIR])
 
 
 __all__ = ["export_page_to_markdown", "export_index_markdown", "export_markdown"]

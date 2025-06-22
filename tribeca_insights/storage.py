@@ -15,7 +15,11 @@ from requests.exceptions import RequestException
 from slugify import slugify
 
 from tribeca_insights.config import HTTP_TIMEOUT, session
-from tribeca_insights.exporters.markdown import export_index_markdown
+from tribeca_insights.exporters.markdown import (
+    MD_PAGES_DIR,
+    MD_PAGES_PLAYWRIGHT_DIR,
+    export_index_markdown,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -24,10 +28,11 @@ def setup_project_folder(domain_slug: str, base_path: Path | str = Path.cwd()) -
     """Create project folder with template and subdirectories."""
     folder = Path(base_path) / domain_slug
     folder.mkdir(parents=True, exist_ok=True)
-    (folder / "pages_md").mkdir(parents=True, exist_ok=True)
+    (folder / MD_PAGES_DIR).mkdir(parents=True, exist_ok=True)
+    (folder / MD_PAGES_PLAYWRIGHT_DIR).mkdir(parents=True, exist_ok=True)
     (folder / "pages_json").mkdir(parents=True, exist_ok=True)
     # create an empty index.md for future page references
-    export_index_markdown(folder)
+    export_index_markdown(folder, [MD_PAGES_DIR, MD_PAGES_PLAYWRIGHT_DIR])
     template_src = (
         Path(__file__).resolve().parent.parent
         / "docs"

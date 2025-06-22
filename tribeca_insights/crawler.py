@@ -26,7 +26,11 @@ from tqdm import tqdm
 
 from tribeca_insights.config import HTTP_TIMEOUT, crawl_delay, session
 from tribeca_insights.exporters.csv import export_external_urls
-from tribeca_insights.exporters.markdown import export_page_to_markdown
+from tribeca_insights.exporters.markdown import (
+    MD_PAGES_DIR,
+    MD_PAGES_PLAYWRIGHT_DIR,
+    export_page_to_markdown,
+)
 from tribeca_insights.storage import save_visited_urls
 from tribeca_insights.text_utils import (
     clean_and_tokenize,
@@ -139,7 +143,15 @@ def fetch_and_process(
         images_data, external = _collect_media_and_links(soup, domain)
         external_links.update(external)
         md_filename = f"{slug}.md"
-        export_page_to_markdown(folder, url, html, domain, external_links)
+        subdir = MD_PAGES_PLAYWRIGHT_DIR if fetch_fn is not None else MD_PAGES_DIR
+        export_page_to_markdown(
+            folder,
+            url,
+            html,
+            domain,
+            external_links,
+            subdirectory=subdir,
+        )
         visible_text = extract_visible_text(html)
         tokens = clean_and_tokenize(visible_text, language)
         local_freq = Counter(tokens)
