@@ -67,7 +67,8 @@ def setup_environment() -> None:
     except OSError as e:
         logger.warning(f"Failed to download NLTK stopwords: {e}")
         logger.error(
-            "Please run 'python -m nltk.downloader stopwords' to install them manually."
+            "Please run 'python -m nltk.downloader stopwords' to install "
+            "them manually."
         )
 
 
