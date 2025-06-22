@@ -30,3 +30,23 @@ Pass `PLAYWRIGHT=1` to the `crawl` target:
 ```bash
 make crawl SLUG=example.com BASE_URL=https://example.com PLAYWRIGHT=1
 ```
+
+## Output Files
+
+Pages renderizadas com Playwright são salvas na pasta
+`pages_md_playwright/`. O índice é gerado a partir dessa pasta e da
+`pages_md/` tradicional.
+
+## Project JSON
+
+Quando Playwright é utilizado, a função `update_project_json` grava o campo
+`"crawler_engine": "Playwright"` no arquivo `project_<slug>.json`.
+
+Exemplo:
+
+```json
+{
+  "crawler_engine": "Playwright",
+  "pages_count": 10
+}
+```

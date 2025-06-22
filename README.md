@@ -6,7 +6,7 @@ Tribeca Insights é uma ferramenta modular de análise SEO e extração semânti
 ## Recursos Principais
 - **Crawling Inteligente**: Respeita `robots.txt`, configura delays e identifica sitemaps.
 - **Exportação Completa**: Gera arquivos em:
-  - Markdown (`pages_md/` e `index.md`)
+  - Markdown (`pages_md/`, `pages_md_playwright/` e `index.md`)
   - CSV (`keyword_frequency_<domain>.csv`, `visited_urls_<domain>.csv`)
   - JSON (`pages_json/`, `index.json`, `external_urls.json`, `keyword_frequency_<domain>.json`, `visited_urls_<domain>.json`)
 - **Análise Semântica**: Limpeza de texto, tokenização e cálculo de frequência de termos com stopwords.
@@ -90,6 +90,8 @@ Opções:
   URL inicial para rastrear (obrigatória).
 - `--playwright`
   Renderiza páginas com Playwright ([docs/playwright.md](docs/playwright.md)).
+  Os arquivos Markdown gerados ficam em `pages_md_playwright/` e o
+  `update_project_json` registra `"crawler_engine": "Playwright"`.
 
 ### Exemplo
 
