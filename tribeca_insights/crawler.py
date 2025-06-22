@@ -190,18 +190,18 @@ def crawl_site(
     site_language: str = "english",
     timeout: int = HTTP_TIMEOUT,
     use_playwright: bool = False,
-) -> Tuple[str, List[Dict]]:
+) -> Tuple[str, List[Dict], str]:
     """
     Crawl site URLs concurrently and collect results.
 
     Iterates over URLs with status=2, processes each, updates visited log,
-    exports external URLs, and returns concatenated text corpus and
-    list of page_data dicts.
+    exports external URLs, and returns concatenated text corpus,
+    list of page_data dicts, and the crawler engine used.
 
     :param use_playwright: force fetching pages via Playwright
 
     :Example:
-        text_corpus, pages_data = crawl_site(
+        text_corpus, pages_data, engine = crawl_site(
             'example-com', 'https://example.com', Path('example-com'), visited_df, 100, max_workers=5, site_language='en', timeout=HTTP_TIMEOUT
         )
     """
@@ -219,6 +219,7 @@ def crawl_site(
     fetcher = (
         fetch_with_playwright if (use_playwright or len(urls_to_visit) > 3) else None
     )
+    crawler_engine = "Playwright" if fetcher is not None else "BeautifulSoup"
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_url = {
@@ -268,4 +269,4 @@ def crawl_site(
     folder.mkdir(parents=True, exist_ok=True)
     save_visited_urls(visited_df, folder / f"visited_urls_{domain}.csv")
     export_external_urls(folder, external_links)
-    return (" ".join(text_corpus), pages_data)
+    return (" ".join(text_corpus), pages_data, crawler_engine)

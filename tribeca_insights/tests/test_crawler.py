@@ -133,7 +133,7 @@ def test_crawl_site_use_playwright_flag(monkeypatch, tmp_path):
     monkeypatch.setattr(crawler, "save_visited_urls", lambda *a, **k: None)
     monkeypatch.setattr(crawler, "export_external_urls", lambda *a, **k: None)
 
-    crawler.crawl_site(
+    _text, _pages, engine = crawler.crawl_site(
         "mysite",
         "https://mysite.com",
         tmp_path,
@@ -142,6 +142,7 @@ def test_crawl_site_use_playwright_flag(monkeypatch, tmp_path):
         use_playwright=True,
     )
     assert called["fn"] is not None
+    assert engine == "Playwright"
 
 
 def test_crawl_site_use_playwright_many_pages(monkeypatch, tmp_path):
@@ -164,7 +165,7 @@ def test_crawl_site_use_playwright_many_pages(monkeypatch, tmp_path):
     monkeypatch.setattr(crawler, "save_visited_urls", lambda *a, **k: None)
     monkeypatch.setattr(crawler, "export_external_urls", lambda *a, **k: None)
 
-    crawler.crawl_site(
+    _text, _pages, engine = crawler.crawl_site(
         "mysite",
         "https://mysite.com",
         tmp_path,
@@ -172,3 +173,4 @@ def test_crawl_site_use_playwright_many_pages(monkeypatch, tmp_path):
         max_pages=4,
     )
     assert called["fn"] is not None
+    assert engine == "Playwright"
