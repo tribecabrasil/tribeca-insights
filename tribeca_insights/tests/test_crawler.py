@@ -1,5 +1,6 @@
 import time
 
+import pandas as pd
 import pytest
 from bs4 import BeautifulSoup
 
@@ -57,7 +58,7 @@ def test_fetch_and_process(monkeypatch, tmp_path):
     monkeypatch.setattr(time, "sleep", lambda s: None)
 
     vis, ext, index, md, data = crawler.fetch_and_process(
-        "https://mysite.com", "mysite.com", tmp_path, "en", timeout=1
+        "https://mysite.com", "mysite.com", tmp_path, "en", timeout=1, fetch_fn=None
     )
     assert vis == "Body text"
     assert ext == {"https://ext.com"}
@@ -81,4 +82,67 @@ def test_fetch_and_process_error(monkeypatch, tmp_path):
     monkeypatch.setattr(crawler, "export_page_to_markdown", boom)
 
     with pytest.raises(crawler.PageProcessingError):
-        crawler.fetch_and_process("https://mysite.com", "mysite.com", tmp_path)
+        crawler.fetch_and_process(
+            "https://mysite.com", "mysite.com", tmp_path, fetch_fn=None
+        )
+
+
+def test_crawl_site_use_playwright_flag(monkeypatch, tmp_path):
+    df = pd.DataFrame(
+        {
+            "URL": ["https://a", "https://b"],
+            "Status": [2, 2],
+            "Data": "",
+            "MD File": "",
+            "JSON File": "",
+        }
+    )
+    called = {}
+
+    def spy_fetch(*args, **kwargs):
+        called["fn"] = args[5] if len(args) > 5 else kwargs.get("fetch_fn")
+        return "", set(), ("", ""), "", {}
+
+    monkeypatch.setattr(crawler, "fetch_and_process", spy_fetch)
+    monkeypatch.setattr(crawler, "save_visited_urls", lambda *a, **k: None)
+    monkeypatch.setattr(crawler, "export_external_urls", lambda *a, **k: None)
+
+    crawler.crawl_site(
+        "mysite",
+        "https://mysite.com",
+        tmp_path,
+        df,
+        max_pages=2,
+        use_playwright=True,
+    )
+    assert called["fn"] is not None
+
+
+def test_crawl_site_use_playwright_many_pages(monkeypatch, tmp_path):
+    df = pd.DataFrame(
+        {
+            "URL": [f"https://a/{i}" for i in range(4)],
+            "Status": [2, 2, 2, 2],
+            "Data": "",
+            "MD File": "",
+            "JSON File": "",
+        }
+    )
+    called = {}
+
+    def spy_fetch(*args, **kwargs):
+        called["fn"] = args[5] if len(args) > 5 else kwargs.get("fetch_fn")
+        return "", set(), ("", ""), "", {}
+
+    monkeypatch.setattr(crawler, "fetch_and_process", spy_fetch)
+    monkeypatch.setattr(crawler, "save_visited_urls", lambda *a, **k: None)
+    monkeypatch.setattr(crawler, "export_external_urls", lambda *a, **k: None)
+
+    crawler.crawl_site(
+        "mysite",
+        "https://mysite.com",
+        tmp_path,
+        df,
+        max_pages=4,
+    )
+    assert called["fn"] is not None

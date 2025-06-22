@@ -98,7 +98,12 @@ def get_external_links(soup: BeautifulSoup, domain: str) -> Set[str]:
 
 
 def fetch_and_process(
-    url: str, domain: str, folder: Path, language: str = "english", timeout: int = 10
+    url: str,
+    domain: str,
+    folder: Path,
+    language: str = "english",
+    timeout: int = 10,
+    fetch_fn=None,
 ) -> Tuple[str, Set[str], Tuple[str, str], str, Dict]:
     """
     Fetch and process a single page.
@@ -112,6 +117,7 @@ def fetch_and_process(
     :param folder: output folder Path
     :param language: language code for tokenization
     :param timeout: request timeout in seconds
+    :param fetch_fn: optional callable to retrieve HTML
     :return: tuple (visible_text, external_links, index_entry, md_filename, page_data)
 
     :Example:
@@ -121,9 +127,12 @@ def fetch_and_process(
     """
     try:
         logger.info(f"Visiting URL: {url}")
-        resp = session.get(url, timeout=timeout)
+        if fetch_fn is not None:
+            html = fetch_fn(url, timeout)
+        else:
+            resp = session.get(url, timeout=timeout)
+            html = resp.text
         time.sleep(crawl_delay)
-        html = resp.text
         soup = BeautifulSoup(html, "html.parser")
         external_links: Set[str] = set()
         (slug, title), headings, description = _extract_page_metadata(soup, url, domain)
@@ -168,6 +177,7 @@ def crawl_site(
     max_workers: int = 5,
     site_language: str = "english",
     timeout: int = HTTP_TIMEOUT,
+    use_playwright: bool = False,
 ) -> Tuple[str, List[Dict]]:
     """
     Crawl site URLs concurrently and collect results.
@@ -175,6 +185,8 @@ def crawl_site(
     Iterates over URLs with status=2, processes each, updates visited log,
     exports external URLs, and returns concatenated text corpus and
     list of page_data dicts.
+
+    :param use_playwright: force fetching pages via Playwright
 
     :Example:
         text_corpus, pages_data = crawl_site(
@@ -190,10 +202,22 @@ def crawl_site(
     text_corpus: List[str] = []
     pages_data: List[dict] = []
     failed_urls: List[str] = []
+    from tribeca_insights.playwright_crawler import fetch_with_playwright
+
+    fetcher = (
+        fetch_with_playwright if (use_playwright or len(urls_to_visit) > 3) else None
+    )
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_url = {
             executor.submit(
-                fetch_and_process, url, domain, folder, site_language, timeout
+                fetch_and_process,
+                url,
+                domain,
+                folder,
+                site_language,
+                timeout,
+                fetcher,
             ): url
             for url in urls_to_visit
         }
