@@ -75,7 +75,15 @@ def setup_environment() -> None:
         ssl._create_default_https_context = _create_unverified_https_context
     except AttributeError:
         pass
-    nltk.download("stopwords", quiet=True)
+
+    try:
+        nltk.download("stopwords", quiet=True)
+        logger.info("NLTK stopwords ensured.")
+    except OSError as e:
+        logger.warning(f"Failed to download NLTK stopwords: {e}")
+        logger.error(
+            "Please run 'python -m nltk.downloader stopwords' to install them manually."
+        )
 
 
 # Clean and tokenize text by removing non-letter characters, collapsing spaces and stopwords.
